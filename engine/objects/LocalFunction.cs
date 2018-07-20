@@ -9,7 +9,7 @@ namespace Mishin870.MHScript.engine.objects {
     /// </summary>
     public class LocalFunction {
         public string name;
-        public MHSScript code;
+        public Script code;
         public List<string> args;
     }
 }

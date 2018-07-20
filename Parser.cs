@@ -10,7 +10,7 @@ using Mishin870.MHScript.engine.objects;
 
 namespace Mishin870.MHScript {
 
-    public class MHSParser {
+    public class Parser {
 
         /// <summary>
         /// Парсит аргументы функции. Как отдельные parseCommand, разделённые запятой
@@ -287,14 +287,14 @@ namespace Mishin870.MHScript {
         }
 
         private static MHSCommandElse parseElse(Lexem block) {
-            MHSScript commandBlock = parseBlock(block);
+            Script commandBlock = parseBlock(block);
             if (commandBlock == null)
                 throw new Exception("Ошибка в блоке кода конструкции else!");
             return new MHSCommandElse(commandBlock);
         }
         private static MHSCommandElseIf parseElseIf(Lexem brace, Lexem block) {
             MHSCommand condition = parseCommand(brace.childs); //parseLogic(brace.childs);
-            MHSScript commandBlock = parseBlock(block);
+            Script commandBlock = parseBlock(block);
             if (commandBlock == null)
                 throw new Exception("Ошибка в блоке кода конструкции else if!");
             if (condition == null)
@@ -305,9 +305,9 @@ namespace Mishin870.MHScript {
         /// <summary>
         /// Блок из команд: {block}
         /// </summary>
-        private static MHSScript parseBlock(Lexem lexemBlock) {
+        private static Script parseBlock(Lexem lexemBlock) {
             List<Lexem> lexems = lexemBlock.childs;
-            MHSScript block = new MHSScript();
+            Script block = new Script();
             int lexemsCount = lexems.Count;
             List<Lexem> oneCommand = new List<Lexem>();
             bool isOneCommandReturn = false;
@@ -356,7 +356,7 @@ namespace Mishin870.MHScript {
                 } else if (lexem.kind == LexemKind.FOR) {
                     if (i + 2 < lexemsCount && lexems[i + 1].kind == LexemKind.BRACE && lexems[i + 2].kind == LexemKind.BLOCK) {
                         //заголовок цикла (начало; условие; шаг)
-                        MHSScript head = parseBlock(lexems[i + 1]);
+                        Script head = parseBlock(lexems[i + 1]);
                         List<MHSCommand> headCommands = head.getCommands();
                         if (headCommands.Count != 3)
                             throw new Exception("Неверная конструкция заголовка for! Необходимо: for (начало; условие; шаг)");
@@ -384,7 +384,7 @@ namespace Mishin870.MHScript {
                     if (i + 3 < lexemsCount && lexems[i + 1].kind == LexemKind.IDENTIFIER && lexems[i + 2].kind == LexemKind.BRACE && lexems[i + 3].kind == LexemKind.BLOCK) {
                         string fname = lexems[i + 1].value;
                         List<string> fargs = parseLocalFunctionArgs(lexems[i + 2].childs);
-                        MHSScript fcode = parseBlock(lexems[i + 3]);
+                        Script fcode = parseBlock(lexems[i + 3]);
                         fcode.isLocalFunctionBlock = true;
                         block.localFunctions.Add(new LocalFunction() {
                             name = fname,
@@ -442,7 +442,7 @@ namespace Mishin870.MHScript {
         /// <summary>
         /// Главная функция. Парсит скрипт в запускаемые команды
         /// </summary>
-        public static MHSScript getScriptChunk(string script) {
+        public static Script getScriptChunk(string script) {
             LexemParser lexemParser = new LexemParser(script);
             List<Lexem> lexems = lexemParser.lexems;
             Lexem lexemBlock = new Lexem() {
@@ -479,12 +479,12 @@ namespace Mishin870.MHScript {
         public object execute(Engine engine, StringWriter output) {
             if (operation == LexemKind.AND) {
                 foreach (MHSCommand block in blocks)
-                    if (!((bool) engine.objectValueHelper(block.execute(engine, output))))
+                    if (!((bool) engine.getRealValue(block.execute(engine, output))))
                         return false;
                 return true;
             } else if (operation == LexemKind.OR) {
                 foreach (MHSCommand block in blocks)
-                    if ((bool) engine.objectValueHelper(block.execute(engine, output)))
+                    if ((bool) engine.getRealValue(block.execute(engine, output)))
                         return true;
                 return false;
             } else {
@@ -523,8 +523,8 @@ namespace Mishin870.MHScript {
         }
 
         public object execute(Engine engine, StringWriter output) {
-            object op1 = engine.objectValueHelper(left.execute(engine, output));
-            object op2 = engine.objectValueHelper(right.execute(engine, output));
+            object op1 = engine.getRealValue(left.execute(engine, output));
+            object op2 = engine.getRealValue(right.execute(engine, output));
             if (op1 == null || op2 == null) {
                 switch (operation) {
                     case LexemKind.EQUALS:
@@ -613,7 +613,7 @@ namespace Mishin870.MHScript {
         }
 
         public object execute(Engine engine, StringWriter output) {
-            if ((bool) engine.objectValueHelper(condition.execute(engine, output)) == true) {
+            if ((bool) engine.getRealValue(condition.execute(engine, output)) == true) {
                 command.execute(engine, output);
                 return true;
             } else {
@@ -634,7 +634,7 @@ namespace Mishin870.MHScript {
         }
 
         public object execute(Engine engine, StringWriter output) {
-            if ((bool) engine.objectValueHelper(condition.execute(engine, output)) == true) {
+            if ((bool) engine.getRealValue(condition.execute(engine, output)) == true) {
                 command.execute(engine, output);
             } else {
                 foreach (MHSCommand statement in elseStatements) {
@@ -664,7 +664,7 @@ namespace Mishin870.MHScript {
         }
 
         public object execute(Engine engine, StringWriter output) {
-            for (pre.execute(engine, output); (bool) engine.objectValueHelper(condition.execute(engine, output)); iter.execute(engine, output)) {
+            for (pre.execute(engine, output); (bool) engine.getRealValue(condition.execute(engine, output)); iter.execute(engine, output)) {
                 command.execute(engine, output);
             }
             return null;
@@ -681,7 +681,7 @@ namespace Mishin870.MHScript {
         }
 
         public object execute(Engine engine, StringWriter output) {
-            while ((bool) engine.objectValueHelper(condition.execute(engine, output))) {
+            while ((bool) engine.getRealValue(condition.execute(engine, output))) {
                 command.execute(engine, output);
             }
             return null;
@@ -704,7 +704,7 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSScript : MHSCommand {
+    public class Script : MHSCommand {
         private List<MHSCommand> commands = new List<MHSCommand>();
         public bool isLocalFunctionBlock;
         public List<LocalFunction> localFunctions = new List<LocalFunction>();
@@ -769,16 +769,16 @@ namespace Mishin870.MHScript {
         }
 
         public object execute(Engine engine, StringWriter output) {
-            object obj = engine.objectValueHelper(command.execute(engine, output));
+            object obj = engine.getRealValue(command.execute(engine, output));
             bool safe = false;
             object defaultValue = null;
             if (index.Count >= 3) {
-                safe = (bool) engine.objectValueHelper(index[1].execute(engine, output));
-                defaultValue = engine.objectValueHelper(index[2].execute(engine, output));
+                safe = (bool) engine.getRealValue(index[1].execute(engine, output));
+                defaultValue = engine.getRealValue(index[2].execute(engine, output));
             }
             if (obj != null) {
                 if (obj is List<object>) {
-                    int x = (int) ((float) engine.objectValueHelper(index[0].execute(engine, output)));
+                    int x = (int) ((float) engine.getRealValue(index[0].execute(engine, output)));
                     int count = ((List<object>) obj).Count;
                     if (x >= 0 && x < count) {
                         return ((List<object>) obj)[x];
@@ -787,12 +787,12 @@ namespace Mishin870.MHScript {
                         if (safe) {
                             return defaultValue;
                         } else {
-                            ErrorHelper.logCommon(output, "Ошибка ндексации: выход за границы списка: " + x + " за пределами [0, " + (count - 1) + "]!");
+                            ExceptionHelper.logCommon(output, "Ошибка ндексации: выход за границы списка: " + x + " за пределами [0, " + (count - 1) + "]!");
                             return null;
                         }
                     }
                 } else if (obj is string) {
-                    int x = (int) ((float) engine.objectValueHelper(index[0].execute(engine, output)));
+                    int x = (int) ((float) engine.getRealValue(index[0].execute(engine, output)));
                     int count = ((string) obj).Length;
                     if (x >= 0 && x < count) {
                         return ((string) obj).Substring(x, 1);
@@ -801,12 +801,12 @@ namespace Mishin870.MHScript {
                         if (safe) {
                             return defaultValue;
                         } else {
-                            ErrorHelper.logCommon(output, "Ошибка ндексации: выход за границы строки: " + x + " за пределами [0, " + (count - 1) + "]!");
+                            ExceptionHelper.logCommon(output, "Ошибка ндексации: выход за границы строки: " + x + " за пределами [0, " + (count - 1) + "]!");
                             return null;
                         }
                     }
                 } else if (obj is Dictionary<string, object>) {
-                    string x = (string) engine.objectValueHelper(index[0].execute(engine, output));
+                    string x = (string) engine.getRealValue(index[0].execute(engine, output));
                     if (((Dictionary<string, object>) obj).ContainsKey(x)) {
                         return ((Dictionary<string, object>) obj)[x];
                     } else {
@@ -814,12 +814,12 @@ namespace Mishin870.MHScript {
                         if (safe) {
                             return defaultValue;
                         } else {
-                            ErrorHelper.logCommon(output, "Ошибка при индексации: ключ \"" + x + "\" не найден в словаре!");
+                            ExceptionHelper.logCommon(output, "Ошибка при индексации: ключ \"" + x + "\" не найден в словаре!");
                             return null;
                         }
                     }
                 } else if (obj is CustomVariable) {
-                    return ((CustomVariable) obj).indexGet(engine.objectValueHelper(index[0].execute(engine, output)), safe, defaultValue);
+                    return ((CustomVariable) obj).indexGet(engine.getRealValue(index[0].execute(engine, output)), safe, defaultValue);
                 } else {
                     if (safe) {
                         return defaultValue;
@@ -828,7 +828,7 @@ namespace Mishin870.MHScript {
                     }
                 }
             } else {
-                ErrorHelper.logCommon(output, "Ошибка при безопасной адресации: объект равен null!");
+                ExceptionHelper.logCommon(output, "Ошибка при безопасной адресации: объект равен null!");
                 return "error";
             }
         }
@@ -852,7 +852,7 @@ namespace Mishin870.MHScript {
         public object execute(Engine engine, StringWriter output) {
             if (left is MHSCommandVariable) {
                 Variable variable = (Variable) left.execute(engine, output);
-                variable.value = engine.objectValueHelper(right.execute(engine, output));
+                variable.value = engine.getRealValue(right.execute(engine, output));
             }
             return null;
         }
@@ -871,22 +871,22 @@ namespace Mishin870.MHScript {
         public object execute(Engine engine, StringWriter output) {
             if (left is MHSCommandVariable) {
                 Variable variable = (Variable) left.execute(engine, output);
-                object obj = engine.objectValueHelper(variable.value);
+                object obj = engine.getRealValue(variable.value);
                 if (obj is string) {
                     StringBuilder stringBuilder = new StringBuilder((string) obj);
-                    int x = (int) ((float) engine.objectValueHelper(index.execute(engine, output)));
-                    stringBuilder[x] = ((string) engine.objectValueHelper(right.execute(engine, output)))[0];
+                    int x = (int) ((float) engine.getRealValue(index.execute(engine, output)));
+                    stringBuilder[x] = ((string) engine.getRealValue(right.execute(engine, output)))[0];
                     variable.value = stringBuilder.ToString();
                 } else if (obj is List<object>) {
-                    int x = (int) ((float) engine.objectValueHelper(index.execute(engine, output)));
-                    ((List<object>) obj)[x] = engine.objectValueHelper(right.execute(engine, output));
+                    int x = (int) ((float) engine.getRealValue(index.execute(engine, output)));
+                    ((List<object>) obj)[x] = engine.getRealValue(right.execute(engine, output));
                 } else if (obj is Dictionary<string, object>) {
-                    string x = (string) engine.objectValueHelper(index.execute(engine, output));
-                    ((Dictionary<string, object>) obj)[x] = engine.objectValueHelper(right.execute(engine, output));
+                    string x = (string) engine.getRealValue(index.execute(engine, output));
+                    ((Dictionary<string, object>) obj)[x] = engine.getRealValue(right.execute(engine, output));
                 } else if (obj is CustomVariable) {
                     ((CustomVariable) obj).indexSet(
-                        engine.objectValueHelper(index.execute(engine, output)),
-                        engine.objectValueHelper(right.execute(engine, output))
+                        engine.getRealValue(index.execute(engine, output)),
+                        engine.getRealValue(right.execute(engine, output))
                     );
                 }
             }
@@ -906,7 +906,7 @@ namespace Mishin870.MHScript {
         public object execute(Engine engine, StringWriter output) {
             if (command is MHSCommandVariable) {
                 Variable variable = (Variable) command.execute(engine, output);
-                object value = engine.objectValueHelper(variable.value);
+                object value = engine.getRealValue(variable.value);
                 if (value is float) {
                     float x = (float) value;
                     switch (operation) {
@@ -946,7 +946,7 @@ namespace Mishin870.MHScript {
                     return ((CustomVariable) value).unary(operation);
                 }
             } else {
-                object value = engine.objectValueHelper(command.execute(engine, output));
+                object value = engine.getRealValue(command.execute(engine, output));
                 if (value is bool) {
                     bool x = (bool) value;
                     switch (operation) {
@@ -1059,7 +1059,7 @@ namespace Mishin870.MHScript {
 
             object[] objects = new object[blocks.Count];
             for (int i = 0; i < blocks.Count; i++) {
-                objects[i] = engine.objectValueHelper(blocks[i].execute(engine, output));
+                objects[i] = engine.getRealValue(blocks[i].execute(engine, output));
                 if (objects[i] == null)
                     return null;
             }
@@ -1131,7 +1131,7 @@ namespace Mishin870.MHScript {
         public object execute(Engine engine, StringWriter output) {
             StringBuilder stringBuilder = new StringBuilder();
             foreach (MHSCommand command in commands)
-                stringBuilder.Append(engine.objectValueHelper(command.execute(engine, output)));
+                stringBuilder.Append(engine.getRealValue(command.execute(engine, output)));
             return stringBuilder.ToString();
         }
 
@@ -1186,7 +1186,7 @@ namespace Mishin870.MHScript {
         public object execute(Engine engine, StringWriter output) {
             object[] resultArgs = new object[args.Count];
             for (int i = 0; i < args.Count; i++)
-                resultArgs[i] = args[i] == null ? null : engine.objectValueHelper(args[i].execute(engine, output));
+                resultArgs[i] = args[i] == null ? null : engine.getRealValue(args[i].execute(engine, output));
 
             return engine.executeFunction(this.functionName, output, engine, resultArgs);
         }
@@ -1206,7 +1206,7 @@ namespace Mishin870.MHScript {
         public object execute(Engine engine, StringWriter output) {
             object[] resultArgs = new object[args.Count];
             for (int i = 0; i < args.Count; i++)
-                resultArgs[i] = args[i] == null ? null : engine.objectValueHelper(args[i].execute(engine, output));
+                resultArgs[i] = args[i] == null ? null : engine.getRealValue(args[i].execute(engine, output));
 
             return engine.executeDotFunction(obj.execute(engine, output), this.functionName, output, engine, resultArgs);
         }

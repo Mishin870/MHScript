@@ -12,8 +12,7 @@ namespace Mishin870.MHScript.engine {
         private static readonly Dictionary<string, VariableFunction> stringFunctions = new Dictionary<string, VariableFunction>();
         private static readonly Dictionary<string, VariableFunction> listFunctions = new Dictionary<string, VariableFunction>();
         private static readonly Dictionary<string, VariableFunction> dictFunctions = new Dictionary<string, VariableFunction>();
-        
-        private static Dictionary<string, GlobalFunction> functions = new Dictionary<string, GlobalFunction>();
+        private static Dictionary<string, GlobalFunction> globalFunctions = new Dictionary<string, GlobalFunction>();
 
         private Dictionary<string, Variable> variables = new Dictionary<string, Variable>();
         private Dictionary<string, LocalFunction> localFunctions = new Dictionary<string, LocalFunction>();
@@ -23,6 +22,9 @@ namespace Mishin870.MHScript.engine {
         private int stackPointer = -1;
         private int localFunctionsInCallStack = 0;
 
+        /// <summary>
+        /// Заполнение функций над стандартными типами
+        /// </summary>
         static Engine() {
             stringFunctions.Add("sub", new VariableFunction() {
                 function = string_sub,
@@ -32,12 +34,12 @@ namespace Mishin870.MHScript.engine {
             stringFunctions.Add("size", new VariableFunction() {
                 function = string_size,
                 functionName = "int size()",
-                description = "Получить длину строки"
+                description = "Возвращает длину строки"
             });
             stringFunctions.Add("reverse", new VariableFunction() {
                 function = string_reverse,
                 functionName = "string reverse()",
-                description = "Инвертировать строку"
+                description = "Инвертирует строку"
             });
 
             listFunctions.Add("add", new VariableFunction() {
@@ -53,28 +55,28 @@ namespace Mishin870.MHScript.engine {
             listFunctions.Add("clear", new VariableFunction() {
                 function = list_clear,
                 functionName = "List<object> clear()",
-                description = "Очистить массив. Возвращает сам массив"
+                description = "Очищает массив. Возвращает сам массив"
             });
             listFunctions.Add("size", new VariableFunction() {
                 function = list_size,
                 functionName = "int size()",
-                description = "Получить размер массива"
+                description = "Возвращает размер массива"
             });
             listFunctions.Add("reverse", new VariableFunction() {
                 function = list_reverse,
                 functionName = "List<object> reverse()",
-                description = "Перевернуть массив. Возвращает сам массив"
+                description = "Переворачивает массив. Возвращает сам массив"
             });
             listFunctions.Add("have", new VariableFunction() {
                 function = list_have,
-                functionName = "List<object> have(obj)",
-                description = "Содержит ли данный список элемент obj?"
+                functionName = "bool have(obj)",
+                description = "Проверяет содержание объекта obj в массиве"
             });
 
             dictFunctions.Add("add", new VariableFunction() {
                 function = dict_add,
                 functionName = "Dictionary<string, object> add((string, object)... args)",
-                description = "Добавляет элементы с ключами, перечисленных по очереди в args, в словарь. Возвращает сам словарь"
+                description = "Добавляет ключи и соответствующие им элементы, переисленные по очереди, в словарь. Возвращает сам словарь"
             });
             dictFunctions.Add("remove", new VariableFunction() {
                 function = dict_remove,
@@ -84,36 +86,36 @@ namespace Mishin870.MHScript.engine {
             dictFunctions.Add("clear", new VariableFunction() {
                 function = dict_clear,
                 functionName = "Dictionary<string, object> clear()",
-                description = "Очистить словарь. Возвращает сам словарь"
+                description = "Очищает словарь. Возвращает сам словарь"
             });
             dictFunctions.Add("size", new VariableFunction() {
                 function = dict_size,
                 functionName = "int size()",
-                description = "Получить размер словаря. Количество пар ключ => значение"
+                description = "Возвращает размер словаря (количество пар ключ => значение)"
             });
             dictFunctions.Add("keys", new VariableFunction() {
                 function = dict_keys,
                 functionName = "List<object> keys()",
-                description = "Получить массив ключей словаря"
+                description = "Возвращает массив ключей словаря"
             });
             dictFunctions.Add("values", new VariableFunction() {
                 function = dict_values,
                 functionName = "List<object> values()",
-                description = "Получить массив значений словаря"
+                description = "Возвращает массив значений словаря"
             });
             dictFunctions.Add("have", new VariableFunction() {
                 function = dict_have,
                 functionName = "bool have(key)",
-                description = "Есть ли ключ key в этом словаре?"
+                description = "Проверяет содержание ключа key в словаре"
             });
             dictFunctions.Add("toUrlArgs", new VariableFunction() {
                 function = dict_to_url_args,
                 functionName = "string toUrlArgs()",
-                description = "Возвращает строку аргументов, созданную на основе этого словаря"
+                description = "Возвращает строку URL-параметров, созданную на основе этого словаря"
             });
         }
 
-        #region DOT_FUNCTIONS
+        #region DEFAULT_OBJECT_FUNCTIONS
         private static object string_sub(object obj, StringWriter output, Engine engine, params object[] args) {
             if (args.Length >= 2 && obj is string && args[0] != null && args[1] != null)
                 return ((string) obj).Substring((int) ((float) args[0]), (int) ((float) args[1]));
@@ -216,7 +218,7 @@ namespace Mishin870.MHScript.engine {
             }
         }
         #endregion
-        #region VARIABLE
+        #region VARIABLES
         /// <summary>
         /// Добавить переменную в движок
         /// </summary>
@@ -252,141 +254,120 @@ namespace Mishin870.MHScript.engine {
             }
         }
         /// <summary>
-        /// Проверка существования переменной
+        /// Проверка существования переменной в движке
         /// </summary>
         public bool isVariableSet(string variableName) {
             return variables.ContainsKey(variableName);
         }
         #endregion
-        #region FUNCTION
+        #region FUNCTIONS
         /// <summary>
-        /// Добавить функцию в движок
+        /// Добавить глобальную функцию в движок
         /// </summary>
-        public void addFunction(string functionName, GlobalFunction function) {
-            functions.Add(functionName, function);
+        public void addGlobalFunction(string functionName, GlobalFunction function) {
+            globalFunctions.Add(functionName, function);
         }
         /// <summary>
-        /// Получить функцию из движка
+        /// Получить глобальную функцию из движка
         /// </summary>
-        public GlobalFunction getFunction(string functionName) {
-            if (functions.ContainsKey(functionName)) {
-                return functions[functionName];
+        public GlobalFunction getGlobalFunction(string functionName) {
+            if (globalFunctions.ContainsKey(functionName)) {
+                return globalFunctions[functionName];
             } else {
                 return null;
             }
         }
         /// <summary>
-        /// Добавить все локальные функции в движок из скрипта
+        /// Добавить набор локальных функций (которые загружаются из скрипта)
         /// </summary>
         public void addLocalFunctions(List<LocalFunction> localFunctions) {
             foreach (LocalFunction localFunction in localFunctions)
                 this.localFunctions[localFunction.name] = localFunction;
         }
         #endregion
-
-        #region DEFAULT_FUNCTIONS
+        #region DEFAULT_GLOBAL_FUNCTIONS
         /// <summary>
         /// Добавляет в движок все необходимые стандартные функции
         /// </summary>
-        public void addDefaultFunctions() {
-            addFunction("array", new GlobalFunction() {
+        public void addDefaultGlobalFunctions() {
+            addGlobalFunction("array", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(array),
-                functionName = "List<object> array(object... args)",
-                description = "Создаёт массив из объектов args"
+                functionDocsName = "List<object> array(object... args)",
+                functionDocsDescription = "Создаёт массив из объектов args"
             });
-            addFunction("dict", new GlobalFunction() {
+            addGlobalFunction("dict", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(dict),
-                functionName = "Dictionary<string, object> dict((string, object)... args)",
-                description = "Создаёт словарь из ключей и объектов, перечисленных по очереди"
+                functionDocsName = "Dictionary<string, object> dict((string, object)... args)",
+                functionDocsDescription = "Создаёт словарь из ключей и объектов, перечисленных по очереди в args"
             });
-            addFunction("echo", new GlobalFunction() {
+            addGlobalFunction("echo", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(echo),
-                functionName = "void echo(value)",
-                description = "Выводит value на страницу"
+                functionDocsName = "void echo(value)",
+                functionDocsDescription = "Выводит value на страницу"
             });
-            addFunction("isnull", new GlobalFunction() {
+            addGlobalFunction("isnull", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(isnull),
-                functionName = "bool isnull(object)",
-                description = "Возвращает true, если object равен null. Иначе false"
+                functionDocsName = "bool isnull(object)",
+                functionDocsDescription = "Возвращает true, если object равен null. Иначе false"
             });
-            addFunction("isset", new GlobalFunction() {
+            addGlobalFunction("isset", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(isset),
-                functionName = "bool isset(variableName)",
-                description = "Возвращает true, если переменная с именем variableName существует"
+                functionDocsName = "bool isset(variableName)",
+                functionDocsDescription = "Возвращает true, если переменная с именем variableName существует"
             });
-            addFunction("unset", new GlobalFunction() {
+            addGlobalFunction("unset", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(unset),
-                functionName = "void unset(variableName)",
-                description = "Удаляет переменную"
+                functionDocsName = "void unset(variableName)",
+                functionDocsDescription = "Удаляет переменную"
             });
-            addFunction("file_exists", new GlobalFunction() {
+            addGlobalFunction("file_exists", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(file_exists),
-                functionName = "bool file_exists(fileName)",
-                description = "Возвращает true, если файл fileName существует. Иначе false"
+                functionDocsName = "bool file_exists(fileName)",
+                functionDocsDescription = "Возвращает true, если файл fileName существует. Иначе false"
             });
-            addFunction("float", new GlobalFunction() {
+            addGlobalFunction("float", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(float_val),
-                functionName = "float float(value, defaultValue)",
-                description = "Конвертирует любой объект в float"
+                functionDocsName = "float float(value, defaultValue)",
+                functionDocsDescription = "Конвертирует любой объект в float"
             });
-            addFunction("string", new GlobalFunction() {
+            addGlobalFunction("string", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(string_val),
-                functionName = "string string(value, defaultValue)",
-                description = "Конвертирует любой объект в string"
+                functionDocsName = "string string(value, defaultValue)",
+                functionDocsDescription = "Конвертирует любой объект в string"
             });
-            addFunction("var_dump", new GlobalFunction() {
+            addGlobalFunction("var_dump", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(var_dump),
-                functionName = "void var_dump(object)",
-                description = "Выводит полную информацию о переменной"
+                functionDocsName = "void var_dump(object)",
+                functionDocsDescription = "Выводит полную информацию о переменной"
             });
-            addFunction("limit", new GlobalFunction() {
+            addGlobalFunction("limit", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(limit),
-                functionName = "string limit(source, count)",
-                description = "Ограничивает строку source в count символов. Плюс троеточие, если сокращена"
+                functionDocsName = "string limit(source, count)",
+                functionDocsDescription = "Ограничивает строку source в count символов. Плюс троеточие, если сокращена"
             });
-            addFunction("files", new GlobalFunction() {
+            addGlobalFunction("files", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(files),
-                functionName = "List<object> files(path, [pattern])",
-                description = "Получить список файлов"
+                functionDocsName = "List<object> files(path, [pattern])",
+                functionDocsDescription = "Получить список файлов"
             });
-            addFunction("dirs", new GlobalFunction() {
+            addGlobalFunction("dirs", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(dirs),
-                functionName = "List<object> dirs(path, [pattern])",
-                description = "Получить список папок"
+                functionDocsName = "List<object> dirs(path, [pattern])",
+                functionDocsDescription = "Получить список папок"
             });
-            addFunction("file_get_contents", new GlobalFunction() {
+            addGlobalFunction("file_get_contents", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(file_get_contents),
-                functionName = "string file_get_contents(fileName)",
-                description = "Получить содержимое файла"
+                functionDocsName = "string file_get_contents(fileName)",
+                functionDocsDescription = "Получить содержимое файла"
             });
-            addFunction("file_get_lines", new GlobalFunction() {
+            addGlobalFunction("file_get_lines", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(file_get_lines),
-                functionName = "List<string> file_get_lines(fileName)",
-                description = "Получить содержимое файла по строчкам"
+                functionDocsName = "List<string> file_get_lines(fileName)",
+                functionDocsDescription = "Получить содержимое файла по строчкам"
             });
             
         }
         
-        private string getErrOneArg(object[] args) {
-            if (args.Length == 0) {
-                return ErrorHelper.ARGUMENT_FEW;
-            } else if (args[0] == null) {
-                return ErrorHelper.ARGUMENT_NULL;
-            } else {
-                return "unknown error";
-            }
-        }
-        private string getErrOneArgString(object[] args) {
-            if (args.Length == 0) {
-                return ErrorHelper.ARGUMENT_FEW;
-            } else if (args[0] == null) {
-                return ErrorHelper.ARGUMENT_NULL;
-            } else if (!(args[0] is string)) {
-                return ErrorHelper.ARGUMENT_STRING;
-            } else {
-                return "unknown error";
-            }
-        }
         private object array(StringWriter output, Engine engine, params object[] args) {
             List<object> arr = new List<object>();
             foreach (object obj in args)
@@ -425,7 +406,7 @@ namespace Mishin870.MHScript.engine {
                     output.Write("null");
                 }
             } else {
-                ErrorHelper.logArg(output, "echo", ErrorHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg(output, "echo", ExceptionHelper.ARGUMENT_FEW);
             }
             return null;
         }
@@ -433,7 +414,14 @@ namespace Mishin870.MHScript.engine {
             if (args.Length > 0 && args[0] != null) {
                 return isVariableSet(args[0].ToString());
             } else {
-                ErrorHelper.logArg(output, "isset", getErrOneArg(args));
+                string functionName = "isset";
+                if (args.Length == 0) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                } else if (args[0] == null) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                } else {
+                    ExceptionHelper.logArg(output, functionName, "unknown error");
+                }
                 return false;
             }
         }
@@ -441,7 +429,14 @@ namespace Mishin870.MHScript.engine {
             if (args.Length > 0 && args[0] != null) {
                 removeVariable(args[0].ToString());
             } else {
-                ErrorHelper.logArg(output, "unset", getErrOneArg(args));
+                string functionName = "unset";
+                if (args.Length == 0) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                } else if (args[0] == null) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                } else {
+                    ExceptionHelper.logArg(output, functionName, "unknown error");
+                }
             }
             return false;
         }
@@ -449,7 +444,7 @@ namespace Mishin870.MHScript.engine {
             if (args.Length > 0) {
                 return args[0] == null;
             } else {
-                ErrorHelper.logArg(output, "isnull", ErrorHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg(output, "isnull", ExceptionHelper.ARGUMENT_FEW);
                 return true;
             }
         }
@@ -457,7 +452,16 @@ namespace Mishin870.MHScript.engine {
             if (args.Length > 0 && args[0] is string) {
                 return File.Exists((string) args[0]);
             } else {
-                ErrorHelper.logArg(output, "file_exists", getErrOneArgString(args));
+                string functionName = "file_exists";
+                if (args.Length == 0) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                } else if (args[0] == null) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                } else if (!(args[0] is string)) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                } else {
+                    return "unknown error";
+                }
                 return false;
             }
         }
@@ -475,7 +479,16 @@ namespace Mishin870.MHScript.engine {
                     result.Add(dir.Substring(baseLen));
                 return result;
             } else {
-                ErrorHelper.logArg(output, "files", getErrOneArgString(args));
+                string functionName = "files";
+                if (args.Length == 0) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                } else if (args[0] == null) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                } else if (!(args[0] is string)) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                } else {
+                    return "unknown error";
+                }
                 return null;
             }
         }
@@ -493,7 +506,16 @@ namespace Mishin870.MHScript.engine {
                     result.Add(dir.Substring(baseLen));
                 return result;
             } else {
-                ErrorHelper.logArg(output, "dirs", getErrOneArgString(args));
+                string functionName = "dirs";
+                if (args.Length == 0) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                } else if (args[0] == null) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                } else if (!(args[0] is string)) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                } else {
+                    return "unknown error";
+                }
                 return null;
             }
         }
@@ -501,7 +523,16 @@ namespace Mishin870.MHScript.engine {
             if (args.Length > 0 && args[0] is string) {
                 return File.ReadAllText((string) args[0]);
             } else {
-                ErrorHelper.logArg(output, "file_get_contents", getErrOneArgString(args));
+                string functionName = "file_get_contents";
+                if (args.Length == 0) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                } else if (args[0] == null) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                } else if (!(args[0] is string)) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                } else {
+                    return "unknown error";
+                }
                 return null;
             }
         }
@@ -513,13 +544,22 @@ namespace Mishin870.MHScript.engine {
                     result.Add(line);
                 return result;
             } else {
-                ErrorHelper.logArg(output, "file_get_lines", getErrOneArgString(args));
+                string functionName = "file_get_lines";
+                if (args.Length == 0) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                } else if (args[0] == null) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                } else if (!(args[0] is string)) {
+                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                } else {
+                    return "unknown error";
+                }
                 return null;
             }
         }
         public object float_val(StringWriter output, Engine engine, params object[] args) {
             if (args.Length == 0) {
-                ErrorHelper.logArg(output, "float", ErrorHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg(output, "float", ExceptionHelper.ARGUMENT_FEW);
                 return 0.0f;
             }
             if (args[0] != null) {
@@ -549,7 +589,7 @@ namespace Mishin870.MHScript.engine {
         }
         public object string_val(StringWriter output, Engine engine, params object[] args) {
             if (args.Length == 0) {
-                ErrorHelper.logArg(output, "string", ErrorHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg(output, "string", ExceptionHelper.ARGUMENT_FEW);
                 return null;
             }
             if (args[0] != null) {
@@ -612,7 +652,7 @@ namespace Mishin870.MHScript.engine {
             if (args.Length > 0) {
                 output.Write(objectInfo(args[0], 0));
             } else {
-                ErrorHelper.logArg(output, "var_dump", ErrorHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg(output, "var_dump", ExceptionHelper.ARGUMENT_FEW);
             }
             return null;
         }
@@ -626,7 +666,7 @@ namespace Mishin870.MHScript.engine {
                     return str;
                 }
             } else {
-                ErrorHelper.logArg(output, "limit", "Использование: limit(строка, макс_количество_символов)");
+                ExceptionHelper.logArg(output, "limit", "Использование: limit(строка, макс_количество_символов)");
                 return null;
             }
         }
@@ -635,14 +675,14 @@ namespace Mishin870.MHScript.engine {
         /// <summary>
         /// Пропарсить файл скрипта. Он состоит из последовательности команд и html-вставок
         /// </summary>
-        public MHSScript parseScript(string page) {
-            return MHSParser.getScriptChunk(page);
+        public Script parseScript(string page) {
+            return Parser.getScriptChunk(page);
         }
 
         /// <summary>
         /// Запустить чанк скрипта и получить его вывод в StringWriter
         /// </summary>
-        private string getChunkOutput(MHSScript chunk) {
+        private string getChunkOutput(Script chunk) {
             StringBuilder stringBuilder = new StringBuilder();
             StringWriter stringWriter = new StringWriter(stringBuilder);
             chunk.execute(this, stringWriter);
@@ -673,7 +713,7 @@ namespace Mishin870.MHScript.engine {
         /// Запустить функцию с заданными аргументами [в основном для вызова из скрипта]
         /// </summary>
         public object executeFunction(string functionName, StringWriter output, Engine engine, object[] args) {
-            GlobalFunction function = getFunction(functionName);
+            GlobalFunction function = getGlobalFunction(functionName);
             if (function != null) {
                 addToCallStack(FunctionType.GLOBAL, null);
                 object obj = function.function.Invoke(output, engine, args);
@@ -703,7 +743,7 @@ namespace Mishin870.MHScript.engine {
         /// <summary>
         /// Вспомогательная функция. Обрабатывает результат MHSCommand для переменной
         /// </summary>
-        public object objectValueHelper(object obj) {
+        public object getRealValue(object obj) {
             if (obj is Variable) {
                 return ((Variable) obj).value;
             } else {
@@ -716,7 +756,7 @@ namespace Mishin870.MHScript.engine {
         /// </summary>
         public object executeDotFunction(object obj, string functionName, StringWriter output, Engine engine, object[] args) {
             VariableFunction function = null;
-            obj = objectValueHelper(obj);
+            obj = getRealValue(obj);
 
             if (obj == null) {
                 throw new ScriptException(ScriptException.NULL_POINTER, "Попытка вызова функции: \"" + functionName + "\" у null объекта!");

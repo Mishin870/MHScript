@@ -10,8 +10,17 @@ namespace Mishin870.MHScript.engine.objects {
     /// </summary>
     public class GlobalFunction {
         public delegate object UniversalFunction(StringWriter output, Engine engine, params object[] args);
+        /// <summary>
+        /// Делегат на саму функцию
+        /// </summary>
         public UniversalFunction function;
-        public string description;
-        public string functionName;
+        /// <summary>
+        /// Описание функции (для документации)
+        /// </summary>
+        public string functionDocsDescription;
+        /// <summary>
+        /// Название функции (для документации)
+        /// </summary>
+        public string functionDocsName;
     }
 }

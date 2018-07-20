@@ -9,7 +9,7 @@ namespace Mishin870.MHScript.engine {
     /// <summary>
     /// Логгер исключений скрипта
     /// </summary>
-    public class ErrorHelper {
+    public class ExceptionHelper {
         /// <summary>
         /// Ожидался не NULL аргумент
         /// </summary>
