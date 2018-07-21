@@ -16,10 +16,10 @@ namespace Mishin870.MHScript {
         /// <summary>
         /// Парсит аргументы функции. Как отдельные parseCommand, разделённые запятой
         /// </summary>
-        private static List<MHSCommand> parseFunctionArgs(Lexem brace) {
+        private static List<ICommand> parseFunctionArgs(Lexem brace) {
             List<Lexem> lexems = brace.childs;
             List<Lexem> currentLexems = new List<Lexem>();
-            List<MHSCommand> commands = new List<MHSCommand>();
+            List<ICommand> commands = new List<ICommand>();
             while (lexems.Count > 0) {
                 if (lexems[0].kind == LexemKind.COMMA) {
                     commands.Add(parseCommand(currentLexems));
@@ -40,7 +40,7 @@ namespace Mishin870.MHScript {
         /// <summary>
         /// Часть примитива (между точками)
         /// </summary>
-        private static MHSCommand parseNamedPrimitivePart(MHSCommand prevCommand, List<Lexem> lexems) {
+        private static ICommand parseNamedPrimitivePart(ICommand prevCommand, List<Lexem> lexems) {
             if (lexems.Count < 1 || lexems[0].kind != LexemKind.IDENTIFIER)
                 return null;
 
@@ -49,42 +49,42 @@ namespace Mishin870.MHScript {
             if (lexems.Count == 1) {
                 if ((lexems[0].kind == LexemKind.INCREMENT || lexems[0].kind == LexemKind.DECREMENT)) {
                     if (prevCommand == null) {
-                        return new MHSCommandUnary(new MHSCommandVariable(value), lexems[0].kind);
+                        return new CommandUnary(new CommandVariable(value), lexems[0].kind);
                     } else {
-                        return new MHSCommandUnary(new MHSCommandDotVariable(prevCommand, value), lexems[0].kind);
+                        return new CommandUnary(new CommandDotVariable(prevCommand, value), lexems[0].kind);
                     }
                 } else if (lexems[0].kind == LexemKind.BRACE) {
                     if (prevCommand == null) {
-                        return new MHSCommandGlobalFunction(value, parseFunctionArgs(lexems[0]));
+                        return new CommandGlobalFunction(value, parseFunctionArgs(lexems[0]));
                     } else {
-                        return new MHSCommandDotFunction(prevCommand, value, parseFunctionArgs(lexems[0]));
+                        return new CommandDotFunction(prevCommand, value, parseFunctionArgs(lexems[0]));
                     }
                 } else if (lexems[0].kind == LexemKind.INDEX) {
                     if (prevCommand == null) {
-                        return new MHSCommandIndex(new MHSCommandVariable(value), parseFunctionArgs(lexems[0]));
+                        return new CommandIndex(new CommandVariable(value), parseFunctionArgs(lexems[0]));
                     } else {
-                        return new MHSCommandIndex(new MHSCommandDotVariable(prevCommand, value), parseFunctionArgs(lexems[0]));
+                        return new CommandIndex(new CommandDotVariable(prevCommand, value), parseFunctionArgs(lexems[0]));
                     }
                 }
             } else if (lexems.Count == 2) {
                 if (lexems[0].kind == LexemKind.BRACE && lexems[1].kind == LexemKind.INDEX) {
                     if (prevCommand == null) {
-                        return new MHSCommandIndex(
-                            new MHSCommandGlobalFunction(value, parseFunctionArgs(lexems[0])),
+                        return new CommandIndex(
+                            new CommandGlobalFunction(value, parseFunctionArgs(lexems[0])),
                             parseFunctionArgs(lexems[1])
                         );
                     } else {
-                        return new MHSCommandIndex(
-                            new MHSCommandDotFunction(prevCommand, value, parseFunctionArgs(lexems[0])),
+                        return new CommandIndex(
+                            new CommandDotFunction(prevCommand, value, parseFunctionArgs(lexems[0])),
                             parseFunctionArgs(lexems[1])
                         );
                     }
                 }
             } else if (lexems.Count == 0) {
                 if (prevCommand == null) {
-                    return new MHSCommandVariable(value);
+                    return new CommandVariable(value);
                 } else {
-                    return new MHSCommandDotVariable(prevCommand, value);
+                    return new CommandDotVariable(prevCommand, value);
                 }
             }
 
@@ -94,7 +94,7 @@ namespace Mishin870.MHScript {
         /// <summary>
         /// Примитив, содержащий в себе переменную или функцию
         /// </summary>
-        private static MHSCommand parseNamedPrimitive(List<Lexem> full) {
+        private static ICommand parseNamedPrimitive(List<Lexem> full) {
             List<List<Lexem>> list = new List<List<Lexem>>();
             List<Lexem> currentList = new List<Lexem>();
             foreach (Lexem lexem in full) {
@@ -110,7 +110,7 @@ namespace Mishin870.MHScript {
             if (list.Count == 1) {
                 return parseNamedPrimitivePart(null, currentList);
             } else {
-                MHSCommand prevCommand = null;
+                ICommand prevCommand = null;
                 foreach (List<Lexem> lexems in list)
                     prevCommand = parseNamedPrimitivePart(prevCommand, lexems);
                 return prevCommand;
@@ -118,38 +118,38 @@ namespace Mishin870.MHScript {
             
         }
 
-        private static MHSCommand parsePrimitive(List<Lexem> lexems) {
+        private static ICommand parsePrimitive(List<Lexem> lexems) {
             if (lexems.Count == 0)
                 return null;
 
             LexemKind kind = lexems[0].kind;
             if (kind == LexemKind.NOT) {
                 lexems.RemoveAt(0);
-                return new MHSCommandUnary(parsePrimitive(lexems), LexemKind.NOT);
+                return new CommandUnary(parsePrimitive(lexems), LexemKind.NOT);
             } else if (kind == LexemKind.BRACE && lexems.Count == 1) {
                 return parseCommand(lexems[0].childs);
             } else if (kind == LexemKind.NUMBER && lexems.Count == 1) {
-                return new MHSCommandNumeric(float.Parse(lexems[0].value, CultureInfo.InvariantCulture));
+                return new CommandNumeric(float.Parse(lexems[0].value, CultureInfo.InvariantCulture));
             } else if (kind == LexemKind.STRING && lexems.Count == 1) {
-                return new MHSCommandString(lexems[0].value);
+                return new CommandString(lexems[0].value);
             } else if (kind == LexemKind.STRING_VARIABLED && lexems.Count == 1) {
-                return new MHSCommandStringVariabled(lexems[0].value);
+                return new CommandStringVariabled(lexems[0].value);
             } else if (kind == LexemKind.TRUE && lexems.Count == 1) {
-                return new MHSCommandBool(true);
+                return new CommandBool(true);
             } else if (kind == LexemKind.FALSE && lexems.Count == 1) {
-                return new MHSCommandBool(false);
+                return new CommandBool(false);
             } else if (kind == LexemKind.IDENTIFIER) {
                 return parseNamedPrimitive(lexems);
             } else if (kind == LexemKind.INCREMENT || kind == LexemKind.DECREMENT) {
                 lexems.RemoveAt(0);
                 if (lexems.Count == 1 && lexems[0].kind == LexemKind.IDENTIFIER) {
-                    return new MHSCommandUnary(new MHSCommandVariable(lexems[0].value), kind);
+                    return new CommandUnary(new CommandVariable(lexems[0].value), kind);
                 }
             }
             throw new InvalidOperationException("Неизвестный синтаксический примитив! " + string.Join(", ", lexems.Select(s => s.kind.ToString()).ToArray()));
         }
 
-        private static MHSCommand parseCommandPart(List<Lexem> lexems, int level) {
+        private static ICommand parseCommandPart(List<Lexem> lexems, int level) {
             if (level >= 7)
                 return parsePrimitive(lexems);
 
@@ -217,41 +217,41 @@ namespace Mishin870.MHScript {
             } else {
                 list.Add(buffer);
                 if (level == 0) {
-                    MHSCommandLogicCompound compound = new MHSCommandLogicCompound(LexemKind.AND);
+                    CommandLogicCompound compound = new CommandLogicCompound(LexemKind.AND);
                     foreach (List<Lexem> sub in list)
                         compound.addBlock(parseCommandPart(sub, level + 1));
                     return compound;
                 } else if (level == 1) {
-                    MHSCommandLogicCompound compound = new MHSCommandLogicCompound(LexemKind.OR);
+                    CommandLogicCompound compound = new CommandLogicCompound(LexemKind.OR);
                     foreach (List<Lexem> sub in list)
                         compound.addBlock(parseCommandPart(sub, level + 1));
                     return compound;
                 } else if (level == 2) {
                     if (compareKind == LexemKind.UNKNOWN || count > 2)
                         return null;
-                    MHSCommandLogic compound = new MHSCommandLogic(
+                    CommandLogic compound = new CommandLogic(
                         compareKind,
                         parseCommandPart(list[0], level + 1),
                         parseCommandPart(list[1], level + 1)
                     );
                     return compound;
                 } else if (level == 3) {
-                    MHSCommandMath compound = new MHSCommandMath(LexemKind.PLUS);
+                    CommandMath compound = new CommandMath(LexemKind.PLUS);
                     foreach (List<Lexem> sub in list)
                         compound.addBlock(parseCommandPart(sub, level + 1));
                     return compound;
                 } else if (level == 4) {
-                    MHSCommandMath compound = new MHSCommandMath(LexemKind.MINUS);
+                    CommandMath compound = new CommandMath(LexemKind.MINUS);
                     foreach (List<Lexem> sub in list)
                         compound.addBlock(parseCommandPart(sub, level + 1));
                     return compound;
                 } else if (level == 5) {
-                    MHSCommandMath compound = new MHSCommandMath(LexemKind.MULTIPLY);
+                    CommandMath compound = new CommandMath(LexemKind.MULTIPLY);
                     foreach (List<Lexem> sub in list)
                         compound.addBlock(parseCommandPart(sub, level + 1));
                     return compound;
                 } else if (level == 6) {
-                    MHSCommandMath compound = new MHSCommandMath(LexemKind.DIVIDE);
+                    CommandMath compound = new CommandMath(LexemKind.DIVIDE);
                     foreach (List<Lexem> sub in list)
                         compound.addBlock(parseCommandPart(sub, level + 1));
                     return compound;
@@ -264,7 +264,7 @@ namespace Mishin870.MHScript {
         /// <summary>
         /// Пропарсить целую команду, отделённую точкой с запятой (или же выражение в скобках)
         /// </summary>
-        private static MHSCommand parseCommand(List<Lexem> lexems) {
+        private static ICommand parseCommand(List<Lexem> lexems) {
             if (lexems.Count == 0)
                 return null;
 
@@ -272,12 +272,12 @@ namespace Mishin870.MHScript {
                 string value = lexems[0].value;
                 if (lexems[1].kind == LexemKind.ASSIGN) {
                     lexems.RemoveRange(0, 2);
-                    return new MHSCommandAssign(new MHSCommandVariable(value), parseCommandPart(lexems, 0));
+                    return new CommandAssign(new CommandVariable(value), parseCommandPart(lexems, 0));
                 } else if (lexems.Count >= 3 && lexems[1].kind == LexemKind.INDEX && lexems[2].kind == LexemKind.ASSIGN) {
-                    MHSCommand index = parseCommandPart(lexems[1].childs, 0);
+                    ICommand index = parseCommandPart(lexems[1].childs, 0);
                     lexems.RemoveRange(0, 3);
-                    return new MHSCommandAssignIndex(
-                        new MHSCommandVariable(value),
+                    return new CommandAssignIndex(
+                        new CommandVariable(value),
                         index,
                         parseCommandPart(lexems, 0)
                     );
@@ -287,20 +287,20 @@ namespace Mishin870.MHScript {
             return parseCommandPart(lexems, 0);
         }
 
-        private static MHSCommandElse parseElse(Lexem block) {
+        private static CommandElse parseElse(Lexem block) {
             Script commandBlock = parseBlock(block);
             if (commandBlock == null)
                 throw new Exception("Ошибка в блоке кода конструкции else!");
-            return new MHSCommandElse(commandBlock);
+            return new CommandElse(commandBlock);
         }
-        private static MHSCommandElseIf parseElseIf(Lexem brace, Lexem block) {
-            MHSCommand condition = parseCommand(brace.childs); //parseLogic(brace.childs);
+        private static CommandElseIf parseElseIf(Lexem brace, Lexem block) {
+            ICommand condition = parseCommand(brace.childs); //parseLogic(brace.childs);
             Script commandBlock = parseBlock(block);
             if (commandBlock == null)
                 throw new Exception("Ошибка в блоке кода конструкции else if!");
             if (condition == null)
                 throw new Exception("Ошибка в блоке условия конструкции else if!");
-            return new MHSCommandElseIf(condition, commandBlock);
+            return new CommandElseIf(condition, commandBlock);
         }
 
         /// <summary>
@@ -316,26 +316,26 @@ namespace Mishin870.MHScript {
             for (int i = 0; i < lexemsCount; i++) {
                 Lexem lexem = lexems[i];
                 if (lexem.kind == LexemKind.SEMICOLON) {
-                    MHSCommand command = parseCommand(oneCommand);
+                    ICommand command = parseCommand(oneCommand);
                     oneCommand.Clear();
                     if (command == null)
                         throw new Exception("Неизвестная операция в скрипте!");
                     if (isOneCommandReturn) {
-                        block.addCommand(new MHSCommandReturn(command));
+                        block.addCommand(new CommandReturn(command));
                     } else {
                         block.addCommand(command);
                     }
                 } else if (lexem.kind == LexemKind.IF) {
                     if (i + 2 < lexemsCount && lexems[i + 1].kind == LexemKind.BRACE && lexems[i + 2].kind == LexemKind.BLOCK) {
-                        MHSCommand condition = parseCommand(lexems[i + 1].childs); //parseLogic(lexems[i + 1].childs);
-                        MHSCommand ifBlock = parseBlock(lexems[i + 2]);
+                        ICommand condition = parseCommand(lexems[i + 1].childs); //parseLogic(lexems[i + 1].childs);
+                        ICommand ifBlock = parseBlock(lexems[i + 2]);
                         //теперь проверяем else блоки
-                        List<MHSCommand> elseStatements = new List<MHSCommand>();
+                        List<ICommand> elseStatements = new List<ICommand>();
                         int n = i + 3;
                         while (n < lexemsCount && lexems[n].kind == LexemKind.ELSE) {
                             if (lexems[n + 1].kind == LexemKind.IF) {
                                 //else if statement
-                                MHSCommandElseIf command = parseElseIf(lexems[n + 2], lexems[n + 3]);
+                                CommandElseIf command = parseElseIf(lexems[n + 2], lexems[n + 3]);
                                 if (command == null)
                                     throw new Exception("Ошибка в конструкции else if!");
                                 elseStatements.Add(command);
@@ -349,7 +349,7 @@ namespace Mishin870.MHScript {
                             }
                         }
                         i = n - 1;
-                        block.addCommand(new MHSCommandIf(condition, ifBlock, elseStatements));
+                        block.addCommand(new CommandIf(condition, ifBlock, elseStatements));
                     } else {
                         throw new Exception("Неверная конструкция if! Необходимо: if (условие) {блок кода}");
                     }
@@ -358,14 +358,14 @@ namespace Mishin870.MHScript {
                     if (i + 2 < lexemsCount && lexems[i + 1].kind == LexemKind.BRACE && lexems[i + 2].kind == LexemKind.BLOCK) {
                         //заголовок цикла (начало; условие; шаг)
                         Script head = parseBlock(lexems[i + 1]);
-                        List<MHSCommand> headCommands = head.getCommands();
+                        List<ICommand> headCommands = head.getCommands();
                         if (headCommands.Count != 3)
                             throw new Exception("Неверная конструкция заголовка for! Необходимо: for (начало; условие; шаг)");
-                        MHSCommand begin = headCommands[0] == null ? new MHSCommandEmpty() : headCommands[0];
-                        MHSCommand condition = headCommands[1] == null ? new MHSCommandEmpty() : headCommands[1];
-                        MHSCommand step = headCommands[2] == null ? new MHSCommandEmpty() : headCommands[2];
-                        MHSCommand command = parseBlock(lexems[i + 2]);
-                        block.addCommand(new MHSCommandFor(begin, condition, step, command));
+                        ICommand begin = headCommands[0] == null ? new CommandEmpty() : headCommands[0];
+                        ICommand condition = headCommands[1] == null ? new CommandEmpty() : headCommands[1];
+                        ICommand step = headCommands[2] == null ? new CommandEmpty() : headCommands[2];
+                        ICommand command = parseBlock(lexems[i + 2]);
+                        block.addCommand(new CommandFor(begin, condition, step, command));
                         i += 3 - 1;
                     } else {
                         throw new Exception("Неверная конструкция for! Необходимо: for (начало; условие; шаг) {блок кода}");
@@ -373,9 +373,9 @@ namespace Mishin870.MHScript {
                     oneCommand.Clear();
                 } else if (lexem.kind == LexemKind.WHILE) {
                     if (i + 2 < lexemsCount && lexems[i + 1].kind == LexemKind.BRACE && lexems[i + 2].kind == LexemKind.BLOCK) {
-                        MHSCommand condition = parseCommand(lexems[i + 1].childs);
-                        MHSCommand command = parseBlock(lexems[i + 2]);
-                        block.addCommand(new MHSCommandWhile(condition, command));
+                        ICommand condition = parseCommand(lexems[i + 1].childs);
+                        ICommand command = parseBlock(lexems[i + 2]);
+                        block.addCommand(new CommandWhile(condition, command));
                         i += 3 - 1;
                     } else {
                         throw new Exception("Неверная конструкция while! Необходимо: while (условие) {блок кода}");
@@ -406,7 +406,7 @@ namespace Mishin870.MHScript {
             }
 
             if (oneCommand.Count > 0) {
-                MHSCommand command = parseCommand(oneCommand);
+                ICommand command = parseCommand(oneCommand);
                 if (command == null)
                     throw new Exception("Неизвестная операция в скрипте!");
                 oneCommand.Clear();
@@ -456,31 +456,31 @@ namespace Mishin870.MHScript {
     /// Любая команда скрипта. Арифметическая операция, условие, вызов функции и т.д.
     /// Некоторые команды имеют в себе блок для других команд.
     /// </summary>
-    public interface MHSCommand {
+    public interface ICommand {
         object execute(Engine engine);
     }
 
     #region STATEMENTS
-    public class MHSCommandLogicCompound : MHSCommand {
-        private List<MHSCommand> blocks = new List<MHSCommand>();
+    public class CommandLogicCompound : ICommand {
+        private List<ICommand> blocks = new List<ICommand>();
         private LexemKind operation;
 
-        public MHSCommandLogicCompound(LexemKind operation) {
+        public CommandLogicCompound(LexemKind operation) {
             this.operation = operation;
         }
 
-        public void addBlock(MHSCommand block) {
+        public void addBlock(ICommand block) {
             this.blocks.Add(block);
         }
 
         public object execute(Engine engine) {
             if (operation == LexemKind.AND) {
-                foreach (MHSCommand block in blocks)
+                foreach (ICommand block in blocks)
                     if (!((bool) engine.getRealValue(block.execute(engine))))
                         return false;
                 return true;
             } else if (operation == LexemKind.OR) {
-                foreach (MHSCommand block in blocks)
+                foreach (ICommand block in blocks)
                     if ((bool) engine.getRealValue(block.execute(engine)))
                         return true;
                 return false;
@@ -490,11 +490,11 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandLogic : MHSCommand {
-        private MHSCommand left, right;
+    public class CommandLogic : ICommand {
+        private ICommand left, right;
         private LexemKind operation;
 
-        public MHSCommandLogic(LexemKind operation, MHSCommand left, MHSCommand right) {
+        public CommandLogic(LexemKind operation, ICommand left, ICommand right) {
             this.operation = operation;
             this.left = left;
             this.right = right;
@@ -572,10 +572,10 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandReturn : MHSCommand {
-        private MHSCommand command;
+    public class CommandReturn : ICommand {
+        private ICommand command;
 
-        public MHSCommandReturn(MHSCommand command) {
+        public CommandReturn(ICommand command) {
             this.command = command;
         }
 
@@ -587,10 +587,10 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandElse : MHSCommand {
-        private MHSCommand command;
+    public class CommandElse : ICommand {
+        private ICommand command;
 
-        public MHSCommandElse(MHSCommand command) {
+        public CommandElse(ICommand command) {
             this.command = command;
         }
 
@@ -600,11 +600,11 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandElseIf : MHSCommand {
-        private MHSCommand condition;
-        private MHSCommand command;
+    public class CommandElseIf : ICommand {
+        private ICommand condition;
+        private ICommand command;
 
-        public MHSCommandElseIf(MHSCommand condition, MHSCommand command) {
+        public CommandElseIf(ICommand condition, ICommand command) {
             this.condition = condition;
             this.command = command;
         }
@@ -619,12 +619,12 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandIf : MHSCommand {
-        private MHSCommand condition;
-        private MHSCommand command;
-        private List<MHSCommand> elseStatements;
+    public class CommandIf : ICommand {
+        private ICommand condition;
+        private ICommand command;
+        private List<ICommand> elseStatements;
 
-        public MHSCommandIf(MHSCommand condition, MHSCommand command, List<MHSCommand> elseStatements) {
+        public CommandIf(ICommand condition, ICommand command, List<ICommand> elseStatements) {
             this.condition = condition;
             this.command = command;
             this.elseStatements = elseStatements;
@@ -634,12 +634,12 @@ namespace Mishin870.MHScript {
             if ((bool) engine.getRealValue(condition.execute(engine)) == true) {
                 command.execute(engine);
             } else {
-                foreach (MHSCommand statement in elseStatements) {
-                    if (statement is MHSCommandElse) {
-                        ((MHSCommandElse) statement).execute(engine);
+                foreach (ICommand statement in elseStatements) {
+                    if (statement is CommandElse) {
+                        ((CommandElse) statement).execute(engine);
                         return null;
-                    } else if (statement is MHSCommandElseIf) {
-                        if ((bool) ((MHSCommandElseIf) statement).execute(engine) == true)
+                    } else if (statement is CommandElseIf) {
+                        if ((bool) ((CommandElseIf) statement).execute(engine) == true)
                             return null;
                     }
                 }
@@ -648,12 +648,12 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandFor : MHSCommand {
-        private MHSCommand condition;
-        private MHSCommand pre, iter;
-        private MHSCommand command;
+    public class CommandFor : ICommand {
+        private ICommand condition;
+        private ICommand pre, iter;
+        private ICommand command;
 
-        public MHSCommandFor(MHSCommand pre, MHSCommand condition, MHSCommand iter, MHSCommand command) {
+        public CommandFor(ICommand pre, ICommand condition, ICommand iter, ICommand command) {
             this.pre = pre;
             this.condition = condition;
             this.iter = iter;
@@ -668,11 +668,11 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandWhile : MHSCommand {
-        private MHSCommand condition;
-        private MHSCommand command;
+    public class CommandWhile : ICommand {
+        private ICommand condition;
+        private ICommand command;
 
-        public MHSCommandWhile(MHSCommand condition, MHSCommand command) {
+        public CommandWhile(ICommand condition, ICommand command) {
             this.condition = condition;
             this.command = command;
         }
@@ -688,22 +688,22 @@ namespace Mishin870.MHScript {
     #endregion
 
     #region STRUCTURES
-    public class Script : MHSCommand {
-        private List<MHSCommand> commands = new List<MHSCommand>();
+    public class Script : ICommand {
+        private List<ICommand> commands = new List<ICommand>();
         public bool isLocalFunctionBlock;
         public List<LocalFunction> localFunctions = new List<LocalFunction>();
 
         /// <summary>
         /// Добавить команду в цепочку
         /// </summary>
-        public void addCommand(MHSCommand command) {
+        public void addCommand(ICommand command) {
             this.commands.Add(command);
         }
 
         /// <summary>
         /// Получить команды блока
         /// </summary>
-        public List<MHSCommand> getCommands() {
+        public List<ICommand> getCommands() {
             return this.commands;
         }
 
@@ -722,7 +722,7 @@ namespace Mishin870.MHScript {
             engine.addLocalFunctions(localFunctions);
             if (isLocalFunctionBlock) {
                 try {
-                    foreach (MHSCommand command in commands)
+                    foreach (ICommand command in commands)
                         command.execute(engine);
                 } catch (ScriptInterruptException sie) {
                     if (sie.code == ScriptInterruptException.CODE_RETURN) {
@@ -733,7 +733,7 @@ namespace Mishin870.MHScript {
                 }
                 return null;
             } else {
-                foreach (MHSCommand command in commands)
+                foreach (ICommand command in commands)
                     command.execute(engine);
                 return null;
             }
@@ -743,11 +743,11 @@ namespace Mishin870.MHScript {
     #endregion
 
     #region COMMON
-    public class MHSCommandIndex : MHSCommand {
-        private MHSCommand command;
-        private List<MHSCommand> index;
+    public class CommandIndex : ICommand {
+        private ICommand command;
+        private List<ICommand> index;
 
-        public MHSCommandIndex(MHSCommand command, List<MHSCommand> index) {
+        public CommandIndex(ICommand command, List<ICommand> index) {
             this.command = command;
             this.index = index;
         }
@@ -818,23 +818,23 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandEmpty : MHSCommand {
+    public class CommandEmpty : ICommand {
         
         public object execute(Engine engine) {
             return null;
         }
 
     }
-    public class MHSCommandAssign : MHSCommand {
-        private MHSCommand left, right;
+    public class CommandAssign : ICommand {
+        private ICommand left, right;
 
-        public MHSCommandAssign(MHSCommand left, MHSCommand right) {
+        public CommandAssign(ICommand left, ICommand right) {
             this.left = left;
             this.right = right;
         }
 
         public object execute(Engine engine) {
-            if (left is MHSCommandVariable) {
+            if (left is CommandVariable) {
                 Variable variable = (Variable) left.execute(engine);
                 variable.value = engine.getRealValue(right.execute(engine));
             }
@@ -842,18 +842,18 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandAssignIndex : MHSCommand {
-        private MHSCommand left, right;
-        private MHSCommand index;
+    public class CommandAssignIndex : ICommand {
+        private ICommand left, right;
+        private ICommand index;
 
-        public MHSCommandAssignIndex(MHSCommand left, MHSCommand index, MHSCommand right) {
+        public CommandAssignIndex(ICommand left, ICommand index, ICommand right) {
             this.left = left;
             this.index = index;
             this.right = right;
         }
 
         public object execute(Engine engine) {
-            if (left is MHSCommandVariable) {
+            if (left is CommandVariable) {
                 Variable variable = (Variable) left.execute(engine);
                 object obj = engine.getRealValue(variable.value);
                 if (obj is string) {
@@ -878,17 +878,17 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandUnary : MHSCommand {
-        private MHSCommand command;
+    public class CommandUnary : ICommand {
+        private ICommand command;
         private LexemKind operation;
 
-        public MHSCommandUnary(MHSCommand command, LexemKind operation) {
+        public CommandUnary(ICommand command, LexemKind operation) {
             this.command = command;
             this.operation = operation;
         }
 
         public object execute(Engine engine) {
-            if (command is MHSCommandVariable) {
+            if (command is CommandVariable) {
                 Variable variable = (Variable) command.execute(engine);
                 object value = engine.getRealValue(variable.value);
                 if (value is float) {
@@ -947,15 +947,15 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandMath : MHSCommand {
+    public class CommandMath : ICommand {
         private LexemKind operation;
-        private List<MHSCommand> blocks = new List<MHSCommand>();
+        private List<ICommand> blocks = new List<ICommand>();
 
-        public MHSCommandMath(LexemKind operation) {
+        public CommandMath(LexemKind operation) {
             this.operation = operation;
         }
 
-        public void addBlock(MHSCommand block) {
+        public void addBlock(ICommand block) {
             this.blocks.Add(block);
         }
 
@@ -1063,10 +1063,10 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandNumeric : MHSCommand {
+    public class CommandNumeric : ICommand {
         private float value;
 
-        public MHSCommandNumeric(float value) {
+        public CommandNumeric(float value) {
             this.value = value;
         }
 
@@ -1075,14 +1075,14 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandString : MHSCommand {
+    public class CommandString : ICommand {
         private string value;
 
-        public MHSCommandString(string value) {
+        public CommandString(string value) {
             this.value = value.Substring(1, value.Length - 2);
         }
 
-        public MHSCommandString(string value, bool removeQuotes) {
+        public CommandString(string value, bool removeQuotes) {
             if (removeQuotes) {
                 this.value = value.Substring(1, value.Length - 2);
             } else {
@@ -1095,18 +1095,18 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandStringVariabled : MHSCommand {
-        private List<MHSCommand> commands;
+    public class CommandStringVariabled : ICommand {
+        private List<ICommand> commands;
 
-        public MHSCommandStringVariabled(string value) {
+        public CommandStringVariabled(string value) {
             string[] arr = Regex.Split(value.Substring(2, value.Length - 3), "(#[a-zA-Z_][a-zA-Z0-9_]*#)");
-            commands = new List<MHSCommand>();
+            commands = new List<ICommand>();
             foreach (string part in arr) {
                 if (part.Length > 0) {
                     if (part[0] == '#' && part[part.Length - 1] == '#') {
-                        commands.Add(new MHSCommandVariable(part.Substring(1, part.Length - 2)));
+                        commands.Add(new CommandVariable(part.Substring(1, part.Length - 2)));
                     } else {
-                        commands.Add(new MHSCommandString(part, false));
+                        commands.Add(new CommandString(part, false));
                     }
                 }
             }
@@ -1114,16 +1114,16 @@ namespace Mishin870.MHScript {
 
         public object execute(Engine engine) {
             StringBuilder stringBuilder = new StringBuilder();
-            foreach (MHSCommand command in commands)
+            foreach (ICommand command in commands)
                 stringBuilder.Append(engine.getRealValue(command.execute(engine)));
             return stringBuilder.ToString();
         }
 
     }
-    public class MHSCommandBool : MHSCommand {
+    public class CommandBool : ICommand {
         private bool value;
 
-        public MHSCommandBool(bool value) {
+        public CommandBool(bool value) {
             this.value = value;
         }
 
@@ -1132,10 +1132,10 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandVariable : MHSCommand {
+    public class CommandVariable : ICommand {
         private string variableName;
 
-        public MHSCommandVariable(string variableName) {
+        public CommandVariable(string variableName) {
             this.variableName = variableName;
         }
 
@@ -1144,11 +1144,11 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandDotVariable : MHSCommand {
-        private MHSCommand obj;
+    public class CommandDotVariable : ICommand {
+        private ICommand obj;
         private string variableName;
 
-        public MHSCommandDotVariable(MHSCommand obj, string variableName) {
+        public CommandDotVariable(ICommand obj, string variableName) {
             this.obj = obj;
             this.variableName = variableName;
         }
@@ -1158,11 +1158,11 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandGlobalFunction : MHSCommand {
+    public class CommandGlobalFunction : ICommand {
         private string functionName;
-        private List<MHSCommand> args;
+        private List<ICommand> args;
 
-        public MHSCommandGlobalFunction(string functionName, List<MHSCommand> args) {
+        public CommandGlobalFunction(string functionName, List<ICommand> args) {
             this.functionName = functionName;
             this.args = args;
         }
@@ -1176,12 +1176,12 @@ namespace Mishin870.MHScript {
         }
 
     }
-    public class MHSCommandDotFunction : MHSCommand {
-        private MHSCommand obj;
+    public class CommandDotFunction : ICommand {
+        private ICommand obj;
         private string functionName;
-        private List<MHSCommand> args;
+        private List<ICommand> args;
 
-        public MHSCommandDotFunction(MHSCommand obj, string functionName, List<MHSCommand> args) {
+        public CommandDotFunction(ICommand obj, string functionName, List<ICommand> args) {
             this.obj = obj;
             this.functionName = functionName;
             this.args = args;
