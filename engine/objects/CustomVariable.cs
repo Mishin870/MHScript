@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Mishin870.MHScript.lexems;
 
 namespace Mishin870.MHScript.engine.objects {
     /// <summary>

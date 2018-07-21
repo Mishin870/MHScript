@@ -66,6 +66,9 @@
     <Compile Include="engine\objects\Variable.cs" />
     <Compile Include="engine\objects\ScriptInterruptException.cs" />
     <Compile Include="lexems\Lexem.cs" />
+    <Compile Include="lexems\LexemDefinitions.cs" />
+    <Compile Include="lexems\LexemDefinitionTypes.cs" />
+    <Compile Include="lexems\LexemParser.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

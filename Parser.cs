@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Mishin870.MHScript.engine;
 using Mishin870.MHScript.engine.objects;
+using Mishin870.MHScript.lexems;
 
 namespace Mishin870.MHScript {
 
