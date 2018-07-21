@@ -653,7 +653,7 @@ namespace Mishin870.MHScript.engine {
         /// Пропарсить файл скрипта. Он состоит из последовательности команд и html-вставок
         /// </summary>
         public Script parseScript(string page) {
-            return CommandsParser.getScriptChunk(page);
+            return CommandsParser.parseScript(page);
         }
 
         /// <summary>
