@@ -65,11 +65,11 @@
     <Compile Include="engine\objects\LocalFunction.cs" />
     <Compile Include="engine\objects\Variable.cs" />
     <Compile Include="engine\objects\ScriptInterruptException.cs" />
-    <Compile Include="lexems\Lexem.cs" />
-    <Compile Include="lexems\LexemDefinitions.cs" />
-    <Compile Include="lexems\LexemTypes.cs" />
-    <Compile Include="lexems\LexemParser.cs" />
-    <Compile Include="Parser.cs" />
+    <Compile Include="engine\lexems\Lexem.cs" />
+    <Compile Include="engine\lexems\LexemDefinitions.cs" />
+    <Compile Include="engine\lexems\LexemTypes.cs" />
+    <Compile Include="engine\lexems\LexemParser.cs" />
+    <Compile Include="engine\commands\Commands.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

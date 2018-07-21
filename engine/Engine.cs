@@ -5,6 +5,7 @@ using System.IO;
 using System.Globalization;
 using Mishin870.MHScript.engine;
 using Mishin870.MHScript.engine.objects;
+using Mishin870.MHScript.engine.commands;
 
 namespace Mishin870.MHScript.engine {
 
@@ -652,7 +653,7 @@ namespace Mishin870.MHScript.engine {
         /// Пропарсить файл скрипта. Он состоит из последовательности команд и html-вставок
         /// </summary>
         public Script parseScript(string page) {
-            return Parser.getScriptChunk(page);
+            return CommandsParser.getScriptChunk(page);
         }
 
         /// <summary>

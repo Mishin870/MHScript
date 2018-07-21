@@ -7,24 +7,29 @@ JS-like scripting engine in C#
 #### Hello world
 ```C#
 //Create scripting engine instance and add our custom global function to it
-Engine engine = new Engine();
+Engine engine = new Engine(new Engine.WarningFunction(warning));
 engine.addGlobalFunction("test", new GlobalFunction() {
 	function = new GlobalFunction.UniversalFunction(test),
 	functionDocsName = "void test(string message)",
 	functionDocsDescription = "Выводит MessageBox на экран"
 });
 
-//Parse, compile and run example script from a string. "<?mh" will be removed in future commits
-Script script = engine.parseScript("<?mh test('Hello, world!');");
+//Parse, compile and run example script from a string
+Script script = engine.parseScript("test('Hello, world!');");
 script.run(engine);
 
-private object test(StringWriter output, Engine engine, params object[] args) {
+private object test(Engine engine, params object[] args) {
 	if (args.Length >= 1) {
 		MessageBox.Show(args[0].ToString());
 	} else {
 		MessageBox.Show("Неверное количество аргументов в test(..)!");
 	}
 	return null;
+}
+
+//Function, used to show warnings (log to file, console, messagebox, ...)
+private void warning(string message) {
+	MessageBox.Show(message, "Warning!");
 }
 ```
 

@@ -7,11 +7,11 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Mishin870.MHScript.engine;
 using Mishin870.MHScript.engine.objects;
-using Mishin870.MHScript.lexems;
+using Mishin870.MHScript.engine.lexems;
 
-namespace Mishin870.MHScript {
+namespace Mishin870.MHScript.engine.commands {
 
-    public class Parser {
+    public class CommandsParser {
 
         /// <summary>
         /// Парсит аргументы функции. Как отдельные parseCommand, разделённые запятой

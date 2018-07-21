@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Mishin870.MHScript.lexems {
+namespace Mishin870.MHScript.engine.lexems {
     static class LexemDefinitions {
 
         public static StaticLexemDefinition[] statics = new StaticLexemDefinition[] {

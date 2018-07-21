@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Mishin870.MHScript.lexems {
+namespace Mishin870.MHScript.engine.lexems {
 
     /// <summary>
     /// Виды возможных лексем в скрипте

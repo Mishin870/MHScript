@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Mishin870.MHScript.engine.commands;
 
 namespace Mishin870.MHScript.engine.objects {
     /// <summary>

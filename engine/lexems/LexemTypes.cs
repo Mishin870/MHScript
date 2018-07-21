@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Mishin870.MHScript.lexems {
+namespace Mishin870.MHScript.engine.lexems {
 
     /// <summary>
     /// Представление любой лексемы в движке
