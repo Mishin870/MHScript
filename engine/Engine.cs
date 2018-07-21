@@ -689,11 +689,11 @@ namespace Mishin870.MHScript.engine {
         /// <summary>
         /// Запустить функцию с заданными аргументами [в основном для вызова из скрипта]
         /// </summary>
-        public object executeFunction(string functionName, Engine engine, object[] args) {
+        public object executeFunction(string functionName, params object[] args) {
             GlobalFunction function = getGlobalFunction(functionName);
             if (function != null) {
                 addToCallStack(FunctionType.GLOBAL, null);
-                object obj = function.function.Invoke(engine, args);
+                object obj = function.function.Invoke(this, args);
                 removeFromCallStack();
                 return obj;
             } else {

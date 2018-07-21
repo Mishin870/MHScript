@@ -318,7 +318,6 @@ namespace Mishin870.MHScript.engine.commands {
                     if (x >= 0 && x < count) {
                         return ((List<object>) obj)[x];
                     } else {
-                        //MHSErrorHelper.logCommon("Ошибка при безопасной индексации: выход за границы списка: " + x + " за пределами [0, " + (count - 1) + "]!");
                         if (safe) {
                             return defaultValue;
                         } else {
@@ -332,7 +331,6 @@ namespace Mishin870.MHScript.engine.commands {
                     if (x >= 0 && x < count) {
                         return ((string) obj).Substring(x, 1);
                     } else {
-                        //MHSErrorHelper.logCommon("Ошибка при безопасной индексации: выход за границы строки: " + x + " за пределами [0, " + (count - 1) + "]!");
                         if (safe) {
                             return defaultValue;
                         } else {
@@ -345,7 +343,6 @@ namespace Mishin870.MHScript.engine.commands {
                     if (((Dictionary<string, object>) obj).ContainsKey(x)) {
                         return ((Dictionary<string, object>) obj)[x];
                     } else {
-                        //MHSErrorHelper.logCommon("Ошибка при безопасной индексации: ключ не найден в словаре!");
                         if (safe) {
                             return defaultValue;
                         } else {
@@ -723,7 +720,7 @@ namespace Mishin870.MHScript.engine.commands {
             for (int i = 0; i < args.Count; i++)
                 resultArgs[i] = args[i] == null ? null : engine.getRealValue(args[i].execute(engine));
 
-            return engine.executeFunction(this.functionName, engine, resultArgs);
+            return engine.executeFunction(this.functionName, resultArgs);
         }
 
     }
