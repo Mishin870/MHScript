@@ -19,89 +19,66 @@ namespace Mishin870.MHScript.lexems {
             private set;
         }
 
-        private Lexem htmlLexem;
-        private int htmlInlineOpen;
-
         public LexemParser(string source) {
-            if (source.StartsWith("?>")) {
-                this.source = source;
-            } else {
-                this.source = "?>" + source;
-            }
+            this.source = source;
             this.sourceLength = this.source.Length;
 
             List<Lexem> lexems = new List<Lexem>();
-            parse(lexems, true);
+            parse(lexems);
             this.lexems = lexems;
         }
 
-        private void parse(List<Lexem> list, bool isCode) {
+        private void parse(List<Lexem> list) {
             LexemKind kind = LexemKind.UNKNOWN;
             LexemKind prevKind = LexemKind.UNKNOWN;
             while (offset < sourceLength) {
                 //пропуск лишних символов (пробел, таб, новая строка, перенос каретки)
                 char c = source[offset];
-                while (offset < sourceLength && (c == ' ' || c == '\t' || c == '\r' || c == '\n')) {
+                while (offset < sourceLength && LexemDefinitions.isEmptyCharacter(c)) {
                     offset++;
                     if (offset >= sourceLength)
                         break;
                     c = source[offset];
                 }
 
-                if (isCode) {
-                    if (offset >= sourceLength || c == ')' || c == '}' || c == ']') {
-                        offset++;
-                        break;
-                    }
-
-                    /*Match match = COMMENT.Match(source, offset);
-                    if (match.Success) {
-                        this.offset += match.Length;
-                        continue;
-                    }*/
-
-                    Lexem lexem = parseStatic() ?? parseDynamic();
-                    if (lexem == null)
-                        throw new Exception(string.Format("Неизвестная лексема на позиции {0}: {1}", offset, source.Substring(offset, Math.Min(30, sourceLength - offset)).Replace("<", "&lt;").Replace(">", "&gt;")));
-
-                    kind = lexem.kind;
-                    if (kind == LexemKind.BRACE || kind == LexemKind.BLOCK || kind == LexemKind.INDEX || kind == LexemKind.HTML_LITERAL) {
-                        if (kind == LexemKind.HTML_LITERAL) {
-                            this.htmlLexem = lexem;
-                            this.htmlInlineOpen = offset;
-                        }
-
-                        List<Lexem> childs = new List<Lexem>();
-                        parse(childs, kind != LexemKind.HTML_LITERAL);
-                        lexem.childs = childs;
-                    } else if (kind == LexemKind.NUMBER && prevKind == LexemKind.MINUS) {
-                        if (list.Count >= 2 && (list[list.Count - 2].kind == LexemKind.ASSIGN || list[list.Count - 2].kind == LexemKind.COMMA)) {
-                            list.RemoveAt(list.Count - 1);
-                        } else {
-                            list[list.Count - 1].kind = LexemKind.PLUS;
-                        }
-                        lexem.value = "-" + lexem.value;
-                    }
-
-                    list.Add(lexem);
-                } else {
-                    if (offset + 3 < sourceLength && source[offset] == '<' && source[offset + 1] == '?' && source[offset + 2] == 'm' && source[offset + 3] == 'h') {
-                        htmlLexem.value = source.Substring(htmlInlineOpen, offset - htmlInlineOpen);
-                        offset += 4;
-                        break;
-                    }
+                if (offset >= sourceLength || LexemDefinitions.isCloseBrace(c)) {
                     offset++;
-                    //доп проверка после прибавления индекса
-                    if (offset >= sourceLength) {
-                        htmlLexem.value = source.Substring(htmlInlineOpen, sourceLength - htmlInlineOpen);
-                        offset++;
-                        break;
-                    }
+                    break;
                 }
+
+                /*Match match = COMMENT.Match(source, offset);
+                if (match.Success) {
+                    this.offset += match.Length;
+                    continue;
+                }*/
+
+                Lexem lexem = parseStatic() ?? parseDynamic();
+                if (lexem == null)
+                    throw new Exception(string.Format("Неизвестная лексема на позиции {0}: {1}", offset, source.Substring(offset, Math.Min(30, sourceLength - offset)).Replace("<", "&lt;").Replace(">", "&gt;")));
+
+                kind = lexem.kind;
+                if (kind == LexemKind.BRACE || kind == LexemKind.BLOCK || kind == LexemKind.INDEX) {
+                    List<Lexem> childs = new List<Lexem>();
+                    parse(childs);
+                    lexem.childs = childs;
+                } else if (kind == LexemKind.NUMBER && prevKind == LexemKind.MINUS) {
+                    if (list.Count >= 2 && (list[list.Count - 2].kind == LexemKind.ASSIGN || list[list.Count - 2].kind == LexemKind.COMMA)) {
+                        list.RemoveAt(list.Count - 1);
+                    } else {
+                        list[list.Count - 1].kind = LexemKind.PLUS;
+                    }
+                    lexem.value = "-" + lexem.value;
+                }
+
+                list.Add(lexem);
+
                 prevKind = kind;
             }
         }
 
+        /// <summary>
+        /// Пропарсить возможные статичные лексемы на текущей позиции
+        /// </summary>
         private Lexem parseStatic() {
             foreach (var def in LexemDefinitions.statics) {
                 string rep = def.representation;
@@ -126,6 +103,9 @@ namespace Mishin870.MHScript.lexems {
             return null;
         }
 
+        /// <summary>
+        /// Пропарсить возможные динамические лексемы на текущей позиции
+        /// </summary>
         private Lexem parseDynamic() {
             foreach (var def in LexemDefinitions.dynamics) {
                 Match match = def.representation.Match(source, offset);

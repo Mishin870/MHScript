@@ -7,7 +7,7 @@ namespace Mishin870.MHScript.lexems {
     /// Виды возможных лексем в скрипте
     /// </summary>
     public enum LexemKind {
-        UNKNOWN, HTML_LITERAL,
+        UNKNOWN,
         AND, OR,
         TRUE, FALSE,
         IF, ELSE, FOR, WHILE, FUNCTION, RETURN,

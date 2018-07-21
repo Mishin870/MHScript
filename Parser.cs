@@ -400,9 +400,6 @@ namespace Mishin870.MHScript {
                 } else if (lexem.kind == LexemKind.RETURN) {
                     isOneCommandReturn = true;
                     oneCommand.Clear();
-                } else if (lexem.kind == LexemKind.HTML_LITERAL) {
-                    block.addCommand(new MHSHtmlInline(lexem.value));
-                    oneCommand.Clear();
                 } else {
                     oneCommand.Add(lexem);
                 }

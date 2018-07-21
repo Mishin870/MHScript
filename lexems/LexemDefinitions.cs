@@ -22,8 +22,6 @@ namespace Mishin870.MHScript.lexems {
             new StaticLexemDefinition(";", LexemKind.SEMICOLON),
             new StaticLexemDefinition(",", LexemKind.COMMA),
             new StaticLexemDefinition(".", LexemKind.DOT),
-            
-            new StaticLexemDefinition("?>", LexemKind.HTML_LITERAL),
 
             new StaticLexemDefinition("&&", LexemKind.AND),
             new StaticLexemDefinition("||", LexemKind.OR),
@@ -63,6 +61,20 @@ namespace Mishin870.MHScript.lexems {
                 kind == LexemKind.GREATER_EQUALS ||
                 kind == LexemKind.EQUALS ||
                 kind == LexemKind.NOTEQUALS;
+        }
+
+        /// <summary>
+        /// Является ли данный символ закрывающим к какой-либо блочной лексеме?
+        /// </summary>
+        public static bool isCloseBrace(char c) {
+            return c == ')' || c == '}' || c == ']';
+        }
+
+        /// <summary>
+        /// Является ли данный символ бесполезным?
+        /// </summary>
+        public static bool isEmptyCharacter(char c) {
+            return c == ' ' || c == '\t' || c == '\r' || c == '\n';
         }
 
     }
