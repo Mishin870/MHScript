@@ -43,7 +43,7 @@ namespace Mishin870.MHScript.engine.objects {
         /// <summary>
         /// Вызывается, когда на основании данной переменной вызывается функция
         /// </summary>
-        object executeFunction(string functionName, Engine engine, StringWriter output, object[] args);
+        object executeFunction(string functionName, Engine engine, object[] args);
         /// <summary>
         /// Вызывается при необходимости сложить этот объект с числом. Либо при вызове функции float
         /// </summary>

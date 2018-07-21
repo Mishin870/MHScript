@@ -9,7 +9,7 @@ namespace Mishin870.MHScript.engine.objects {
     /// Функция, вызываемая на объекте
     /// </summary>
     public class VariableFunction {
-        public delegate object UniversalFunction(object obj, StringWriter output, Engine engine, params object[] args);
+        public delegate object UniversalFunction(object obj, Engine engine, params object[] args);
         public UniversalFunction function;
         public string description;
         public string functionName;

@@ -9,7 +9,7 @@ namespace Mishin870.MHScript.engine.objects {
     /// Функция, описанная при помощи делегата на функцию C#
     /// </summary>
     public class GlobalFunction {
-        public delegate object UniversalFunction(StringWriter output, Engine engine, params object[] args);
+        public delegate object UniversalFunction(Engine engine, params object[] args);
         /// <summary>
         /// Делегат на саму функцию
         /// </summary>

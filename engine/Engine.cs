@@ -22,6 +22,13 @@ namespace Mishin870.MHScript.engine {
         private int stackPointer = -1;
         private int localFunctionsInCallStack = 0;
 
+        public delegate void WarningFunction(string message);
+        public WarningFunction warning;
+
+        public Engine(WarningFunction warning) {
+            this.warning = warning;
+        }
+
         /// <summary>
         /// Заполнение функций над стандартными типами
         /// </summary>
@@ -116,51 +123,51 @@ namespace Mishin870.MHScript.engine {
         }
 
         #region DEFAULT_OBJECT_FUNCTIONS
-        private static object string_sub(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object string_sub(object obj, Engine engine, params object[] args) {
             if (args.Length >= 2 && obj is string && args[0] != null && args[1] != null)
                 return ((string) obj).Substring((int) ((float) args[0]), (int) ((float) args[1]));
             return null;
         }
-        private static object string_size(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object string_size(object obj, Engine engine, params object[] args) {
             return (float) ((string) obj).Length;
         }
-        private static object string_reverse(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object string_reverse(object obj, Engine engine, params object[] args) {
             char[] arr = ((string) obj).ToCharArray();
             Array.Reverse(arr);
             return new string(arr);
         }
 
-        private static object list_add(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object list_add(object obj, Engine engine, params object[] args) {
             List<object> list = (List<object>) obj;
             foreach (object arg in args)
                 list.Add(obj);
             return obj;
         }
-        private static object list_remove(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object list_remove(object obj, Engine engine, params object[] args) {
             List<object> list = (List<object>) obj;
             if (args.Length == 1 && args[0] != null)
                 list.RemoveAt((int) ((float) args[0]));
             return obj;
         }
-        private static object list_clear(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object list_clear(object obj, Engine engine, params object[] args) {
             List<object> list = (List<object>) obj;
             list.Clear();
             return obj;
         }
-        private static object list_size(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object list_size(object obj, Engine engine, params object[] args) {
             return (float) ((List<object>) obj).Count;
         }
-        private static object list_reverse(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object list_reverse(object obj, Engine engine, params object[] args) {
             ((List<object>) obj).Reverse();
             return obj;
         }
-        private static object list_have(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object list_have(object obj, Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] != null)
                 return ((List<object>) obj).Contains(args[0]);
             return false;
         }
 
-        private static object dict_add(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_add(object obj, Engine engine, params object[] args) {
             Dictionary<string, object> dict = (Dictionary<string, object>) obj;
             for (int i = 0; i < args.Length; i += 2) {
                 string key = (string) args[i];
@@ -170,40 +177,40 @@ namespace Mishin870.MHScript.engine {
             }
             return dict;
         }
-        private static object dict_remove(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_remove(object obj, Engine engine, params object[] args) {
             Dictionary<string, object> dict = (Dictionary<string, object>) obj;
             if (args.Length == 1 && args[0] != null)
                 dict.Remove((string) args[0]);
             return obj;
         }
-        private static object dict_clear(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_clear(object obj, Engine engine, params object[] args) {
             Dictionary<string, object> dict = (Dictionary<string, object>) obj;
             dict.Clear();
             return obj;
         }
-        private static object dict_size(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_size(object obj, Engine engine, params object[] args) {
             return (float) ((Dictionary<string, object>) obj).Count;
         }
-        private static object dict_keys(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_keys(object obj, Engine engine, params object[] args) {
             List<object> keys = new List<object>();
             Dictionary<string, object> dict = (Dictionary<string, object>) obj;
             foreach (string key in dict.Keys)
                 keys.Add(key);
             return keys;
         }
-        private static object dict_values(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_values(object obj, Engine engine, params object[] args) {
             List<object> values = new List<object>();
             Dictionary<string, object> dict = (Dictionary<string, object>) obj;
             foreach (string value in dict.Values)
                 values.Add(value);
             return values;
         }
-        private static object dict_have(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_have(object obj, Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] != null)
                 return ((Dictionary<string, object>) obj).ContainsKey((string) args[0]);
             return false;
         }
-        private static object dict_to_url_args(object obj, StringWriter output, Engine engine, params object[] args) {
+        private static object dict_to_url_args(object obj, Engine engine, params object[] args) {
             Dictionary<string, object> dict = (Dictionary<string, object>) obj;
             if (dict.Count > 0) {
                 string result = "";
@@ -300,11 +307,6 @@ namespace Mishin870.MHScript.engine {
                 functionDocsName = "Dictionary<string, object> dict((string, object)... args)",
                 functionDocsDescription = "Создаёт словарь из ключей и объектов, перечисленных по очереди в args"
             });
-            addGlobalFunction("echo", new GlobalFunction() {
-                function = new GlobalFunction.UniversalFunction(echo),
-                functionDocsName = "void echo(value)",
-                functionDocsDescription = "Выводит value на страницу"
-            });
             addGlobalFunction("isnull", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(isnull),
                 functionDocsName = "bool isnull(object)",
@@ -337,8 +339,8 @@ namespace Mishin870.MHScript.engine {
             });
             addGlobalFunction("var_dump", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(var_dump),
-                functionDocsName = "void var_dump(object)",
-                functionDocsDescription = "Выводит полную информацию о переменной"
+                functionDocsName = "string var_dump(object)",
+                functionDocsDescription = "Возвращает полную информацию о переменной"
             });
             addGlobalFunction("limit", new GlobalFunction() {
                 function = new GlobalFunction.UniversalFunction(limit),
@@ -368,13 +370,13 @@ namespace Mishin870.MHScript.engine {
             
         }
         
-        private object array(StringWriter output, Engine engine, params object[] args) {
+        private object array(Engine engine, params object[] args) {
             List<object> arr = new List<object>();
             foreach (object obj in args)
                 arr.Add(obj);
             return arr;
         }
-        private object dict(StringWriter output, Engine engine, params object[] args) {
+        private object dict(Engine engine, params object[] args) {
             Dictionary<string, object> arr = new Dictionary<string, object>();
             for (int i = 0; i < args.Length; i += 2) {
                 string key = (string) args[i];
@@ -384,88 +386,62 @@ namespace Mishin870.MHScript.engine {
             }
             return arr;
         }
-        private object echo(StringWriter output, Engine engine, params object[] args) {
-            if (args.Length >= 1) {
-                if (args[0] != null) {
-                    if (args[0] is string) {
-                        output.Write((string) args[0]);
-                    } else if (args[0] is float) {
-                        output.Write((float) args[0]);
-                    } else if (args[0] is bool) {
-                        output.Write((bool) args[0]);
-                    } else if (args[0] is List<object>) {
-                        output.Write("array(" + ((List<object>) args[0]).Count + ")");
-                    } else if (args[0] is Dictionary<string, object>) {
-                        output.Write("dict(" + ((Dictionary<string, object>) args[0]).Count + ")");
-                    } else if (args[0] is CustomVariable) {
-                        output.Write("custom_object");
-                    } else {
-                        output.Write("error");
-                    }
-                } else {
-                    output.Write("null");
-                }
-            } else {
-                ExceptionHelper.logArg(output, "echo", ExceptionHelper.ARGUMENT_FEW);
-            }
-            return null;
-        }
-        private object isset(StringWriter output, Engine engine, params object[] args) {
+        private object isset(Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] != null) {
                 return isVariableSet(args[0].ToString());
             } else {
                 string functionName = "isset";
                 if (args.Length == 0) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_FEW);
                 } else if (args[0] == null) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_NULL);
                 } else {
-                    ExceptionHelper.logArg(output, functionName, "unknown error");
+                    ExceptionHelper.logArg(functionName, "unknown error");
                 }
                 return false;
             }
         }
-        private object unset(StringWriter output, Engine engine, params object[] args) {
+        private object unset(Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] != null) {
                 removeVariable(args[0].ToString());
             } else {
                 string functionName = "unset";
                 if (args.Length == 0) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_FEW);
                 } else if (args[0] == null) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_NULL);
                 } else {
-                    ExceptionHelper.logArg(output, functionName, "unknown error");
+                    ExceptionHelper.logArg(functionName, "unknown error");
                 }
             }
             return false;
         }
-        private object isnull(StringWriter output, Engine engine, params object[] args) {
+        private object isnull(Engine engine, params object[] args) {
             if (args.Length > 0) {
                 return args[0] == null;
             } else {
-                ExceptionHelper.logArg(output, "isnull", ExceptionHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg("isnull", ExceptionHelper.ARGUMENT_FEW);
                 return true;
             }
         }
-        private object file_exists(StringWriter output, Engine engine, params object[] args) {
+        private object file_exists(Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] is string) {
                 return File.Exists((string) args[0]);
             } else {
                 string functionName = "file_exists";
                 if (args.Length == 0) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_FEW);
                 } else if (args[0] == null) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_NULL);
                 } else if (!(args[0] is string)) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_STRING);
                 } else {
                     return "unknown error";
                 }
                 return false;
             }
         }
-        private object files(StringWriter output, Engine engine, params object[] args) {
+        private object files(Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] is string) {
                 List<object> result = new List<object>();
                 string[] arr;
@@ -481,18 +457,18 @@ namespace Mishin870.MHScript.engine {
             } else {
                 string functionName = "files";
                 if (args.Length == 0) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_FEW);
                 } else if (args[0] == null) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_NULL);
                 } else if (!(args[0] is string)) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_STRING);
                 } else {
                     return "unknown error";
                 }
                 return null;
             }
         }
-        private object dirs(StringWriter output, Engine engine, params object[] args) {
+        private object dirs(Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] is string) {
                 List<object> result = new List<object>();
                 string[] arr;
@@ -508,35 +484,35 @@ namespace Mishin870.MHScript.engine {
             } else {
                 string functionName = "dirs";
                 if (args.Length == 0) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_FEW);
                 } else if (args[0] == null) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_NULL);
                 } else if (!(args[0] is string)) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_STRING);
                 } else {
                     return "unknown error";
                 }
                 return null;
             }
         }
-        private object file_get_contents(StringWriter output, Engine engine, params object[] args) {
+        private object file_get_contents(Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] is string) {
                 return File.ReadAllText((string) args[0]);
             } else {
                 string functionName = "file_get_contents";
                 if (args.Length == 0) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_FEW);
                 } else if (args[0] == null) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_NULL);
                 } else if (!(args[0] is string)) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_STRING);
                 } else {
                     return "unknown error";
                 }
                 return null;
             }
         }
-        private object file_get_lines(StringWriter output, Engine engine, params object[] args) {
+        private object file_get_lines(Engine engine, params object[] args) {
             if (args.Length > 0 && args[0] is string) {
                 string[] arr = File.ReadAllLines((string) args[0]);
                 List<object> result = new List<object>();
@@ -546,20 +522,20 @@ namespace Mishin870.MHScript.engine {
             } else {
                 string functionName = "file_get_lines";
                 if (args.Length == 0) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_FEW);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_FEW);
                 } else if (args[0] == null) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_NULL);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_NULL);
                 } else if (!(args[0] is string)) {
-                    ExceptionHelper.logArg(output, functionName, ExceptionHelper.ARGUMENT_STRING);
+                    ExceptionHelper.logArg(functionName, ExceptionHelper.ARGUMENT_STRING);
                 } else {
                     return "unknown error";
                 }
                 return null;
             }
         }
-        public object float_val(StringWriter output, Engine engine, params object[] args) {
+        public object float_val(Engine engine, params object[] args) {
             if (args.Length == 0) {
-                ExceptionHelper.logArg(output, "float", ExceptionHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg("float", ExceptionHelper.ARGUMENT_FEW);
                 return 0.0f;
             }
             if (args[0] != null) {
@@ -587,9 +563,9 @@ namespace Mishin870.MHScript.engine {
                 return 0.0f;
             }
         }
-        public object string_val(StringWriter output, Engine engine, params object[] args) {
+        public object string_val(Engine engine, params object[] args) {
             if (args.Length == 0) {
-                ExceptionHelper.logArg(output, "string", ExceptionHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg("string", ExceptionHelper.ARGUMENT_FEW);
                 return null;
             }
             if (args[0] != null) {
@@ -648,15 +624,15 @@ namespace Mishin870.MHScript.engine {
                 throw new ScriptException(ScriptException.UNKNOWN_VARIABLE_TYPE, "Неизвестный тип переменной: \"" + obj.GetType() + "\"!");
             }
         }
-        private object var_dump(StringWriter output, Engine engine, params object[] args) {
+        private object var_dump(Engine engine, params object[] args) {
             if (args.Length > 0) {
-                output.Write(objectInfo(args[0], 0));
+                return objectInfo(args[0], 0);
             } else {
-                ExceptionHelper.logArg(output, "var_dump", ExceptionHelper.ARGUMENT_FEW);
+                ExceptionHelper.logArg("var_dump", ExceptionHelper.ARGUMENT_FEW);
             }
             return null;
         }
-        private object limit(StringWriter output, Engine engine, params object[] args) {
+        private object limit(Engine engine, params object[] args) {
             if (args.Length >= 2 && args[0] is string && args[1] is float) {
                 string str = (string) args[0];
                 int len = (int) ((float) args[1]);
@@ -666,7 +642,7 @@ namespace Mishin870.MHScript.engine {
                     return str;
                 }
             } else {
-                ExceptionHelper.logArg(output, "limit", "Использование: limit(строка, макс_количество_символов)");
+                ExceptionHelper.logArg("limit", "Использование: limit(строка, макс_количество_символов)");
                 return null;
             }
         }
@@ -685,7 +661,7 @@ namespace Mishin870.MHScript.engine {
         private string getChunkOutput(Script chunk) {
             StringBuilder stringBuilder = new StringBuilder();
             StringWriter stringWriter = new StringWriter(stringBuilder);
-            chunk.execute(this, stringWriter);
+            chunk.execute(this);
             stringWriter.Close();
             return stringBuilder.ToString();
         }
@@ -712,11 +688,11 @@ namespace Mishin870.MHScript.engine {
         /// <summary>
         /// Запустить функцию с заданными аргументами [в основном для вызова из скрипта]
         /// </summary>
-        public object executeFunction(string functionName, StringWriter output, Engine engine, object[] args) {
+        public object executeFunction(string functionName, Engine engine, object[] args) {
             GlobalFunction function = getGlobalFunction(functionName);
             if (function != null) {
                 addToCallStack(FunctionType.GLOBAL, null);
-                object obj = function.function.Invoke(output, engine, args);
+                object obj = function.function.Invoke(engine, args);
                 removeFromCallStack();
                 return obj;
             } else {
@@ -731,7 +707,7 @@ namespace Mishin870.MHScript.engine {
                     }
 
                     addToCallStack(FunctionType.LOCAL, localArgs);
-                    object obj = localFunctions[functionName].code.execute(this, output);
+                    object obj = localFunctions[functionName].code.execute(this);
                     removeFromCallStack();
                     return obj;
                 } else {
@@ -754,7 +730,7 @@ namespace Mishin870.MHScript.engine {
         /// <summary>
         /// Запустить функцию объекта с заданными аргументами [в основном для вызова из скрипта]
         /// </summary>
-        public object executeDotFunction(object obj, string functionName, StringWriter output, Engine engine, object[] args) {
+        public object executeDotFunction(object obj, string functionName, Engine engine, object[] args) {
             VariableFunction function = null;
             obj = getRealValue(obj);
 
@@ -773,13 +749,13 @@ namespace Mishin870.MHScript.engine {
                     function = dictFunctions[functionName];
             } else if (obj is CustomVariable) {
                 addToCallStack(FunctionType.GLOBAL, null);
-                object functionResult = ((CustomVariable) obj).executeFunction(functionName, this, output, args);
+                object functionResult = ((CustomVariable) obj).executeFunction(functionName, this, args);
                 removeFromCallStack();
                 return functionResult;
             }
             if (function != null) {
                 addToCallStack(FunctionType.GLOBAL, null);
-                object functionResult = function.function.Invoke(obj, output, engine, args);
+                object functionResult = function.function.Invoke(obj, engine, args);
                 removeFromCallStack();
                 return functionResult;
             } else {

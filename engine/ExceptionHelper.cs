@@ -37,8 +37,8 @@ namespace Mishin870.MHScript.engine {
         /// <param name="output">поток вывода лога</param>
         /// <param name="functionName">название функции</param>
         /// <param name="message">сообщение исключения</param>
-        public static void logArg(StringWriter output, string functionName, string message) {
-            output.Write("<b>[Warning] ArgumentException:</b> " + message + " in function " + functionName);
+        public static void logArg(string functionName, string message) {
+            Console.WriteLine("[Warning] ArgumentException: " + message + " in function " + functionName);
         }
 
         /// <summary>
@@ -46,8 +46,8 @@ namespace Mishin870.MHScript.engine {
         /// </summary>
         /// <param name="output">поток вывода лога</param>
         /// <param name="message">описание исключения</param>
-        public static void logCommon(StringWriter output, string message) {
-            output.Write("<b>[Warning] Exception:</b> " + message);
+        public static void logCommon(string message) {
+            Console.WriteLine("[Warning] Exception: " + message);
         }
 
     }
