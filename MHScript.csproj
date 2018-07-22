@@ -55,6 +55,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="engine\commands\SerializationHelper.cs" />
     <Compile Include="engine\commands\CommandsParser.cs" />
     <Compile Include="engine\Engine.cs" />
     <Compile Include="engine\FunctionType.cs" />

@@ -15,14 +15,28 @@ namespace Mishin870.MHScript.engine.commands {
     /// Любая команда скрипта. Арифметическая операция, условие, вызов функции и т.д.
     /// Некоторые команды имеют в себе блок для других команд.
     /// </summary>
-    public interface ICommand {
-        object execute(Engine engine);
+    public abstract class ICommand {
+        public abstract object execute(Engine engine);
+        public virtual void serialize(Stream stream) {
+            stream.WriteByte(SerializationHelper.ids[GetType()]);
+        }
     }
 
     #region STATEMENTS
     public class CommandLogicCompound : ICommand {
         private List<ICommand> blocks = new List<ICommand>();
         private LexemKind operation;
+
+        public CommandLogicCompound(Stream stream) {
+            operation = (LexemKind) stream.ReadByte();
+            SerializationHelper.deserializeBlock(stream, blocks);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            stream.WriteByte((byte) operation);
+            SerializationHelper.serializeBlock(stream, blocks);
+        }
 
         public CommandLogicCompound(LexemKind operation) {
             this.operation = operation;
@@ -32,7 +46,7 @@ namespace Mishin870.MHScript.engine.commands {
             this.blocks.Add(block);
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             if (operation == LexemKind.AND) {
                 foreach (ICommand block in blocks)
                     if (!((bool) engine.getRealValue(block.execute(engine))))
@@ -52,6 +66,19 @@ namespace Mishin870.MHScript.engine.commands {
     public class CommandLogic : ICommand {
         private ICommand left, right;
         private LexemKind operation;
+
+        public CommandLogic(Stream stream) {
+            operation = (LexemKind) stream.ReadByte();
+            left = SerializationHelper.deSerialize(stream);
+            right = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            stream.WriteByte((byte) operation);
+            left.serialize(stream);
+            right.serialize(stream);
+        }
 
         public CommandLogic(LexemKind operation, ICommand left, ICommand right) {
             this.operation = operation;
@@ -78,7 +105,7 @@ namespace Mishin870.MHScript.engine.commands {
             }
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             object op1 = engine.getRealValue(left.execute(engine));
             object op2 = engine.getRealValue(right.execute(engine));
             if (op1 == null || op2 == null) {
@@ -134,11 +161,20 @@ namespace Mishin870.MHScript.engine.commands {
     public class CommandReturn : ICommand {
         private ICommand command;
 
+        public CommandReturn(Stream stream) {
+            command = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            command.serialize(stream);
+        }
+
         public CommandReturn(ICommand command) {
             this.command = command;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             throw new ScriptInterruptException(
                 ScriptInterruptException.CODE_RETURN,
                 command.execute(engine)
@@ -149,11 +185,20 @@ namespace Mishin870.MHScript.engine.commands {
     public class CommandElse : ICommand {
         private ICommand command;
 
+        public CommandElse(Stream stream) {
+            command = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            command.serialize(stream);
+        }
+
         public CommandElse(ICommand command) {
             this.command = command;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             command.execute(engine);
             return null;
         }
@@ -163,12 +208,23 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand condition;
         private ICommand command;
 
+        public CommandElseIf(Stream stream) {
+            condition = SerializationHelper.deSerialize(stream);
+            command = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            condition.serialize(stream);
+            command.serialize(stream);
+        }
+
         public CommandElseIf(ICommand condition, ICommand command) {
             this.condition = condition;
             this.command = command;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             if ((bool) engine.getRealValue(condition.execute(engine)) == true) {
                 command.execute(engine);
                 return true;
@@ -183,13 +239,27 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand command;
         private List<ICommand> elseStatements;
 
+        public CommandIf(Stream stream) {
+            condition = SerializationHelper.deSerialize(stream);
+            command = SerializationHelper.deSerialize(stream);
+            elseStatements = new List<ICommand>();
+            SerializationHelper.deserializeBlock(stream, elseStatements);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            condition.serialize(stream);
+            command.serialize(stream);
+            SerializationHelper.serializeBlock(stream, elseStatements);
+        }
+
         public CommandIf(ICommand condition, ICommand command, List<ICommand> elseStatements) {
             this.condition = condition;
             this.command = command;
             this.elseStatements = elseStatements;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             if ((bool) engine.getRealValue(condition.execute(engine)) == true) {
                 command.execute(engine);
             } else {
@@ -212,6 +282,21 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand pre, iter;
         private ICommand command;
 
+        public CommandFor(Stream stream) {
+            condition = SerializationHelper.deSerialize(stream);
+            pre = SerializationHelper.deSerialize(stream);
+            iter = SerializationHelper.deSerialize(stream);
+            command = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            condition.serialize(stream);
+            pre.serialize(stream);
+            iter.serialize(stream);
+            command.serialize(stream);
+        }
+
         public CommandFor(ICommand pre, ICommand condition, ICommand iter, ICommand command) {
             this.pre = pre;
             this.condition = condition;
@@ -219,7 +304,7 @@ namespace Mishin870.MHScript.engine.commands {
             this.command = command;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             for (pre.execute(engine); (bool) engine.getRealValue(condition.execute(engine)); iter.execute(engine)) {
                 command.execute(engine);
             }
@@ -231,12 +316,23 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand condition;
         private ICommand command;
 
+        public CommandWhile(Stream stream) {
+            condition = SerializationHelper.deSerialize(stream);
+            command = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            condition.serialize(stream);
+            command.serialize(stream);
+        }
+
         public CommandWhile(ICommand condition, ICommand command) {
             this.condition = condition;
             this.command = command;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             while ((bool) engine.getRealValue(condition.execute(engine))) {
                 command.execute(engine);
             }
@@ -251,6 +347,30 @@ namespace Mishin870.MHScript.engine.commands {
         private List<ICommand> commands = new List<ICommand>();
         public bool isLocalFunctionBlock;
         public List<LocalFunction> localFunctions = new List<LocalFunction>();
+
+        public Script(Stream stream) {
+            SerializationHelper.deserializeBlock(stream, commands);
+            isLocalFunctionBlock = stream.ReadByte() == 1;
+
+            int count = SerializationHelper.readInt(stream);
+            for (int i = 0; i < count; i++) {
+                localFunctions.Add(new LocalFunction(stream));
+            }
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            SerializationHelper.serializeBlock(stream, commands);
+            stream.WriteByte((byte) (isLocalFunctionBlock ? 1 : 0));
+
+            SerializationHelper.writeInt(stream, localFunctions.Count);
+            foreach (LocalFunction function in localFunctions) {
+                function.serialize(stream);
+            }
+        }
+
+        public Script() {
+        }
 
         /// <summary>
         /// Добавить команду в цепочку
@@ -269,7 +389,7 @@ namespace Mishin870.MHScript.engine.commands {
         /// <summary>
         /// Запустить скрипт
         /// </summary>
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             engine.addLocalFunctions(localFunctions);
             if (isLocalFunctionBlock) {
                 try {
@@ -298,12 +418,24 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand command;
         private List<ICommand> index;
 
+        public CommandIndex(Stream stream) {
+            command = SerializationHelper.deSerialize(stream);
+            index = new List<ICommand>();
+            SerializationHelper.deserializeBlock(stream, index);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            command.serialize(stream);
+            SerializationHelper.serializeBlock(stream, index);
+        }
+
         public CommandIndex(ICommand command, List<ICommand> index) {
             this.command = command;
             this.index = index;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             object obj = engine.getRealValue(command.execute(engine));
             bool safe = false;
             object defaultValue = null;
@@ -367,21 +499,42 @@ namespace Mishin870.MHScript.engine.commands {
 
     }
     public class CommandEmpty : ICommand {
-        
-        public object execute(Engine engine) {
+
+        public CommandEmpty() {
+        }
+
+        public CommandEmpty(Stream stream) {
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+        }
+
+        public override object execute(Engine engine) {
             return null;
         }
 
     }
     public class CommandAssign : ICommand {
         private ICommand left, right;
+        
+        public CommandAssign(Stream stream) {
+            left = SerializationHelper.deSerialize(stream);
+            right = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            left.serialize(stream);
+            right.serialize(stream);
+        }
 
         public CommandAssign(ICommand left, ICommand right) {
             this.left = left;
             this.right = right;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             if (left is CommandVariable) {
                 Variable variable = (Variable) left.execute(engine);
                 variable.value = engine.getRealValue(right.execute(engine));
@@ -394,13 +547,26 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand left, right;
         private ICommand index;
 
+        public CommandAssignIndex(Stream stream) {
+            left = SerializationHelper.deSerialize(stream);
+            right = SerializationHelper.deSerialize(stream);
+            index = SerializationHelper.deSerialize(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            left.serialize(stream);
+            right.serialize(stream);
+            index.serialize(stream);
+        }
+
         public CommandAssignIndex(ICommand left, ICommand index, ICommand right) {
             this.left = left;
             this.index = index;
             this.right = right;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             if (left is CommandVariable) {
                 Variable variable = (Variable) left.execute(engine);
                 object obj = engine.getRealValue(variable.value);
@@ -430,12 +596,23 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand command;
         private LexemKind operation;
 
+        public CommandUnary(Stream stream) {
+            command = SerializationHelper.deSerialize(stream);
+            operation = (LexemKind) stream.ReadByte();
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            command.serialize(stream);
+            stream.WriteByte((byte) operation);
+        }
+
         public CommandUnary(ICommand command, LexemKind operation) {
             this.command = command;
             this.operation = operation;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             if (command is CommandVariable) {
                 Variable variable = (Variable) command.execute(engine);
                 object value = engine.getRealValue(variable.value);
@@ -498,6 +675,17 @@ namespace Mishin870.MHScript.engine.commands {
     public class CommandMath : ICommand {
         private LexemKind operation;
         private List<ICommand> blocks = new List<ICommand>();
+
+        public CommandMath(Stream stream) {
+            operation = (LexemKind) stream.ReadByte();
+            SerializationHelper.deserializeBlock(stream, blocks);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            stream.WriteByte((byte) operation);
+            SerializationHelper.serializeBlock(stream, blocks);
+        }
 
         public CommandMath(LexemKind operation) {
             this.operation = operation;
@@ -585,7 +773,7 @@ namespace Mishin870.MHScript.engine.commands {
             return result;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             if (blocks.Count == 0)
                 return null;
 
@@ -612,19 +800,37 @@ namespace Mishin870.MHScript.engine.commands {
 
     }
     public class CommandNumeric : ICommand {
-        private float value;
+        private int value;
 
-        public CommandNumeric(float value) {
+        public CommandNumeric(Stream stream) {
+            value = SerializationHelper.readInt(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            SerializationHelper.writeInt(stream, value);
+        }
+
+        public CommandNumeric(int value) {
             this.value = value;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             return value;
         }
 
     }
     public class CommandString : ICommand {
         private string value;
+
+        public CommandString(Stream stream) {
+            value = SerializationHelper.readString(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            SerializationHelper.writeString(stream, value);
+        }
 
         public CommandString(string value) {
             this.value = value.Substring(1, value.Length - 2);
@@ -638,13 +844,23 @@ namespace Mishin870.MHScript.engine.commands {
             }
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             return value;
         }
 
     }
     public class CommandStringVariabled : ICommand {
         private List<ICommand> commands;
+
+        public CommandStringVariabled(Stream stream) {
+            commands = new List<ICommand>();
+            SerializationHelper.deserializeBlock(stream, commands);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            SerializationHelper.serializeBlock(stream, commands);
+        }
 
         public CommandStringVariabled(string value) {
             string[] arr = Regex.Split(value.Substring(2, value.Length - 3), "(#[a-zA-Z_][a-zA-Z0-9_]*#)");
@@ -660,7 +876,7 @@ namespace Mishin870.MHScript.engine.commands {
             }
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             StringBuilder stringBuilder = new StringBuilder();
             foreach (ICommand command in commands)
                 stringBuilder.Append(engine.getRealValue(command.execute(engine)));
@@ -671,11 +887,20 @@ namespace Mishin870.MHScript.engine.commands {
     public class CommandBool : ICommand {
         private bool value;
 
+        public CommandBool(Stream stream) {
+            value = stream.ReadByte() == 1;
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            stream.WriteByte((byte) (value ? 1 : 0));
+        }
+
         public CommandBool(bool value) {
             this.value = value;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             return value;
         }
 
@@ -683,11 +908,20 @@ namespace Mishin870.MHScript.engine.commands {
     public class CommandVariable : ICommand {
         private string variableName;
 
+        public CommandVariable(Stream stream) {
+            variableName = SerializationHelper.readString(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            SerializationHelper.writeString(stream, variableName);
+        }
+
         public CommandVariable(string variableName) {
             this.variableName = variableName;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             return engine.getVariable(this.variableName);
         }
 
@@ -696,12 +930,23 @@ namespace Mishin870.MHScript.engine.commands {
         private ICommand obj;
         private string variableName;
 
+        public CommandDotVariable(Stream stream) {
+            obj = SerializationHelper.deSerialize(stream);
+            variableName = SerializationHelper.readString(stream);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            obj.serialize(stream);
+            SerializationHelper.writeString(stream, variableName);
+        }
+
         public CommandDotVariable(ICommand obj, string variableName) {
             this.obj = obj;
             this.variableName = variableName;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             return engine.getDotProperty(obj.execute(engine), this.variableName);
         }
 
@@ -710,12 +955,24 @@ namespace Mishin870.MHScript.engine.commands {
         private string functionName;
         private List<ICommand> args;
 
+        public CommandGlobalFunction(Stream stream) {
+            functionName = SerializationHelper.readString(stream);
+            args = new List<ICommand>();
+            SerializationHelper.deserializeBlock(stream, args);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            SerializationHelper.writeString(stream, functionName);
+            SerializationHelper.serializeBlock(stream, args);
+        }
+
         public CommandGlobalFunction(string functionName, List<ICommand> args) {
             this.functionName = functionName;
             this.args = args;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             object[] resultArgs = new object[args.Count];
             for (int i = 0; i < args.Count; i++)
                 resultArgs[i] = args[i] == null ? null : engine.getRealValue(args[i].execute(engine));
@@ -729,13 +986,27 @@ namespace Mishin870.MHScript.engine.commands {
         private string functionName;
         private List<ICommand> args;
 
+        public CommandDotFunction(Stream stream) {
+            obj = SerializationHelper.deSerialize(stream);
+            functionName = SerializationHelper.readString(stream);
+            args = new List<ICommand>();
+            SerializationHelper.deserializeBlock(stream, args);
+        }
+
+        public override void serialize(Stream stream) {
+            base.serialize(stream);
+            obj.serialize(stream);
+            SerializationHelper.writeString(stream, functionName);
+            SerializationHelper.serializeBlock(stream, args);
+        }
+
         public CommandDotFunction(ICommand obj, string functionName, List<ICommand> args) {
             this.obj = obj;
             this.functionName = functionName;
             this.args = args;
         }
 
-        public object execute(Engine engine) {
+        public override object execute(Engine engine) {
             object[] resultArgs = new object[args.Count];
             for (int i = 0; i < args.Count; i++)
                 resultArgs[i] = args[i] == null ? null : engine.getRealValue(args[i].execute(engine));

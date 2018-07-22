@@ -151,7 +151,7 @@ namespace Mishin870.MHScript.engine.commands {
             } else if (kind == LexemKind.BRACE && lexems.Count == 1) {
                 return parseStatement(lexems[0].childs);
             } else if (kind == LexemKind.NUMBER && lexems.Count == 1) {
-                return new CommandNumeric(float.Parse(lexems[0].value, CultureInfo.InvariantCulture));
+                return new CommandNumeric(int.Parse(lexems[0].value));
             } else if (kind == LexemKind.STRING && lexems.Count == 1) {
                 return new CommandString(lexems[0].value);
             } else if (kind == LexemKind.STRING_VARIABLED && lexems.Count == 1) {

@@ -650,10 +650,17 @@ namespace Mishin870.MHScript.engine {
         #endregion
 
         /// <summary>
-        /// Пропарсить файл скрипта. Он состоит из последовательности команд и html-вставок
+        /// Пропарсить текст скрипта.
         /// </summary>
         public Script parseScript(string page) {
             return CommandsParser.parseScript(page);
+        }
+
+        /// <summary>
+        /// Загрузить сериализованный скрипт из потока.
+        /// </summary>
+        public Script loadScript(Stream stream) {
+            return (Script) SerializationHelper.deSerialize(stream);
         }
 
         /// <summary>
