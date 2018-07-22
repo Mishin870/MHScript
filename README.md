@@ -1,5 +1,5 @@
 # MHScript
-JS-like scripting engine in C#
+JS-like self-documented serializable scripting engine in C#
 
 #### Requirements
 * .net framework 3.5+
@@ -32,6 +32,25 @@ private void warning(string message) {
 	MessageBox.Show(message, "Warning!");
 }
 ```
+
+#### Serialization
+```C#
+using (FileStream stream = new FileStream("test.script", FileMode.Create, FileAccess.Write)) {
+	script.serialize(stream);
+}
+```
+
+#### DeSerialization
+```C#
+using (FileStream stream = new FileStream("test.script", FileMode.Open, FileAccess.Read)) {
+	Script script = engine.loadScript(stream);
+	script.execute(engine);
+}
+```
+
+#### Documentation
+All functions (include your own) in MHS contains their descriptions and full signatures.
+In future this will be used in documentation generator and in autocompleting in code editor.
 
 #### Tasks
 - [x] Parse lexems in script
