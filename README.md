@@ -57,6 +57,6 @@ In future this will be used in documentation generator and in autocompleting in 
 - [x] Combine them to complex objects (compile)
 - [x] Make local script functions
 - [x] Make local function variables and callstack
+- [x] Serialize script objects for future c++ client-side interpreter
 - [ ] Restructurize engine
-- [ ] "Compile" script objects into pseudo-bytecode for future c++ client-side interpreter
 - [ ] Implement objects properties
