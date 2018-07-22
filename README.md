@@ -10,6 +10,7 @@ JS-like self-documented serializable scripting engine in C#
 Engine engine = new Engine(new Engine.WarningFunction(warning));
 engine.addGlobalFunction("test", new GlobalFunction() {
 	function = new GlobalFunction.UniversalFunction(test),
+	//For future documentation generator
 	functionDocsName = "void test(string message)",
 	functionDocsDescription = "Выводит MessageBox на экран"
 });
@@ -44,7 +45,6 @@ using (FileStream stream = new FileStream("test.script", FileMode.Create, FileAc
 ```C#
 using (FileStream stream = new FileStream("test.script", FileMode.Open, FileAccess.Read)) {
 	Script script = engine.loadScript(stream);
-	script.execute(engine);
 }
 ```
 
@@ -58,5 +58,8 @@ In future this will be used in documentation generator and in autocompleting in 
 - [x] Make local script functions
 - [x] Make local function variables and callstack
 - [x] Serialize script objects for future c++ client-side interpreter
-- [ ] Restructurize engine
+- [x] Restructurize engine
+- [ ] Documentation generator
+- [ ] Code editor
+- [ ] C++ client-side interpreter
 - [ ] Implement objects properties
