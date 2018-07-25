@@ -320,9 +320,8 @@ namespace Mishin870.MHScript.engine.commands {
         /// <summary>
         /// Пропарсить содержимое блочной лексемы
         /// </summary>
-        private static Script parseCommandsBlock(Lexem lexemBlock) {
+        private static Script parseCommandsBlock(Lexem lexemBlock, Script block) {
             List<Lexem> lexems = lexemBlock.childs;
-            Script block = new Script();
             int lexemsCount = lexems.Count;
             List<Lexem> oneCommand = new List<Lexem>();
             bool isOneCommandReturn = false;
@@ -342,7 +341,7 @@ namespace Mishin870.MHScript.engine.commands {
                 } else if (lexem.kind == LexemKind.IF) {
                     if (i + 2 < lexemsCount && lexems[i + 1].kind == LexemKind.BRACE && lexems[i + 2].kind == LexemKind.BLOCK) {
                         ICommand condition = parseStatement(lexems[i + 1].childs);
-                        ICommand ifBlock = parseCommandsBlock(lexems[i + 2]);
+                        ICommand ifBlock = parseCommandsBlock(lexems[i + 2], new Script().setRoot(false));
                         //теперь проверяем else блоки
                         List<ICommand> elseStatements = new List<ICommand>();
                         int n = i + 3;
@@ -350,7 +349,7 @@ namespace Mishin870.MHScript.engine.commands {
                             if (lexems[n + 1].kind == LexemKind.IF) {
                                 //else if statement
                                 ICommand elseIfCondition = parseStatement(lexems[n + 2].childs);
-                                Script commandBlock = parseCommandsBlock(lexems[n + 3]);
+                                Script commandBlock = parseCommandsBlock(lexems[n + 3], new Script().setRoot(false));
                                 if (commandBlock == null)
                                     throw new Exception("Ошибка в блоке кода конструкции else if!");
                                 if (elseIfCondition == null)
@@ -362,7 +361,7 @@ namespace Mishin870.MHScript.engine.commands {
                                 n += 4;
                             } else if (lexems[n + 1].kind == LexemKind.BLOCK) {
                                 //else statement
-                                Script elseBlock = parseCommandsBlock(lexems[n + 1]);
+                                Script elseBlock = parseCommandsBlock(lexems[n + 1], new Script().setRoot(false));
                                 if (elseBlock == null)
                                     throw new Exception("Ошибка в блоке кода конструкции else!");
                                 elseStatements.Add(new CommandElse(elseBlock));
@@ -380,14 +379,14 @@ namespace Mishin870.MHScript.engine.commands {
                 } else if (lexem.kind == LexemKind.FOR) {
                     if (i + 2 < lexemsCount && lexems[i + 1].kind == LexemKind.BRACE && lexems[i + 2].kind == LexemKind.BLOCK) {
                         //заголовок цикла (начало; условие; шаг)
-                        Script head = parseCommandsBlock(lexems[i + 1]);
+                        Script head = parseCommandsBlock(lexems[i + 1], new Script().setRoot(false));
                         List<ICommand> headCommands = head.getCommands();
                         if (headCommands.Count != 3)
                             throw new Exception("Неверная конструкция заголовка for! Необходимо: for (начало; условие; шаг)");
                         ICommand begin = headCommands[0] == null ? new CommandEmpty() : headCommands[0];
                         ICommand condition = headCommands[1] == null ? new CommandEmpty() : headCommands[1];
                         ICommand step = headCommands[2] == null ? new CommandEmpty() : headCommands[2];
-                        ICommand command = parseCommandsBlock(lexems[i + 2]);
+                        ICommand command = parseCommandsBlock(lexems[i + 2], new Script().setRoot(false));
                         block.addCommand(new CommandFor(begin, condition, step, command));
                         i += 3 - 1;
                     } else {
@@ -397,7 +396,7 @@ namespace Mishin870.MHScript.engine.commands {
                 } else if (lexem.kind == LexemKind.WHILE) {
                     if (i + 2 < lexemsCount && lexems[i + 1].kind == LexemKind.BRACE && lexems[i + 2].kind == LexemKind.BLOCK) {
                         ICommand condition = parseStatement(lexems[i + 1].childs);
-                        ICommand command = parseCommandsBlock(lexems[i + 2]);
+                        ICommand command = parseCommandsBlock(lexems[i + 2], new Script().setRoot(false));
                         block.addCommand(new CommandWhile(condition, command));
                         i += 3 - 1;
                     } else {
@@ -408,9 +407,9 @@ namespace Mishin870.MHScript.engine.commands {
                     if (i + 3 < lexemsCount && lexems[i + 1].kind == LexemKind.IDENTIFIER && lexems[i + 2].kind == LexemKind.BRACE && lexems[i + 3].kind == LexemKind.BLOCK) {
                         string fname = lexems[i + 1].value;
                         List<string> fargs = parseLocalFunctionArgs(lexems[i + 2].childs);
-                        Script fcode = parseCommandsBlock(lexems[i + 3]);
-                        fcode.isLocalFunctionBlock = true;
-                        block.localFunctions.Add(new LocalFunction() {
+                        Script fcode = parseCommandsBlock(lexems[i + 3], new Script().setRoot(false));
+                        fcode.setRoot(false);
+                        block.addLocalFunction(new LocalFunction() {
                             name = fname,
                             code = fcode,
                             args = fargs
@@ -449,7 +448,9 @@ namespace Mishin870.MHScript.engine.commands {
                 childs = lexems,
                 kind = LexemKind.BLOCK,
             };
-            return parseCommandsBlock(lexemBlock);
+            Script result = new Script();
+            result.setRoot(true);
+            return parseCommandsBlock(lexemBlock, result);
         }
 
     }

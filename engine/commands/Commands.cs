@@ -345,31 +345,54 @@ namespace Mishin870.MHScript.engine.commands {
     #region STRUCTURES
     public class Script : ICommand {
         private List<ICommand> commands = new List<ICommand>();
-        public bool isLocalFunctionBlock;
-        public List<LocalFunction> localFunctions = new List<LocalFunction>();
+        private List<LocalFunction> localFunctions = new List<LocalFunction>();
+        private bool isRoot = true;
 
         public Script(Stream stream) {
             SerializationHelper.deserializeBlock(stream, commands);
-            isLocalFunctionBlock = stream.ReadByte() == 1;
+            isRoot = stream.ReadByte() == 1;
 
-            int count = SerializationHelper.readInt(stream);
-            for (int i = 0; i < count; i++) {
-                localFunctions.Add(new LocalFunction(stream));
+            if (isRoot) {
+                int count = SerializationHelper.readInt(stream);
+                for (int i = 0; i < count; i++) {
+                    localFunctions.Add(new LocalFunction(stream));
+                }
             }
         }
 
         public override void serialize(Stream stream) {
             base.serialize(stream);
             SerializationHelper.serializeBlock(stream, commands);
-            stream.WriteByte((byte) (isLocalFunctionBlock ? 1 : 0));
+            stream.WriteByte((byte) (isRoot ? 1 : 0));
 
-            SerializationHelper.writeInt(stream, localFunctions.Count);
-            foreach (LocalFunction function in localFunctions) {
-                function.serialize(stream);
+            if (isRoot) {
+                SerializationHelper.writeInt(stream, localFunctions.Count);
+                foreach (LocalFunction function in localFunctions) {
+                    function.serialize(stream);
+                }
             }
         }
 
         public Script() {
+        }
+
+        /// <summary>
+        /// Сделать этот блок скрипта корневым или не корневым
+        /// (например, блок не корневого скрипта внутри функции внутри корневого скрипта)
+        /// </summary>
+        public Script setRoot(bool isRoot) {
+            this.isRoot = isRoot;
+            return this;
+        }
+
+        /// <summary>
+        /// Добавить функцию, определённую в этом блоке скрипта
+        /// </summary>
+        public void addLocalFunction(LocalFunction localFunction) {
+            if (!isRoot) {
+                throw new InvalidOperationException("Local functions can only be added to root script blocks!");
+            }
+            this.localFunctions.Add(localFunction);
         }
 
         /// <summary>
@@ -390,8 +413,11 @@ namespace Mishin870.MHScript.engine.commands {
         /// Запустить скрипт
         /// </summary>
         public override object execute(Engine engine) {
-            engine.addLocalFunctions(localFunctions);
-            if (isLocalFunctionBlock) {
+            if (isRoot) {
+                engine.addLocalFunctions(localFunctions);
+                foreach (ICommand command in commands)
+                    command.execute(engine);
+            } else {
                 try {
                     foreach (ICommand command in commands)
                         command.execute(engine);
@@ -402,14 +428,9 @@ namespace Mishin870.MHScript.engine.commands {
                         throw sie;
                     }
                 }
-                return null;
-            } else {
-                foreach (ICommand command in commands)
-                    command.execute(engine);
-                return null;
             }
+            return null;
         }
-
     }
     #endregion
 
