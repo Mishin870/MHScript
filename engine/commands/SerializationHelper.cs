@@ -112,5 +112,31 @@ namespace Mishin870.MHScript.engine.commands {
         /// Все вышеперечисленные правила будут работать только при установке этого флага в true
         /// </summary>
         internal bool optimizeForClient;
+
+        internal void readIntro(Stream stream) {
+            globalFunctions.Clear();
+            localFunctions.Clear();
+
+            int count = SerializationHelper.readInt(stream);
+            for (int i = 0; i < count; i++) {
+                globalFunctions.Add(SerializationHelper.readString(stream));
+            }
+            count = SerializationHelper.readInt(stream);
+            for (int i = 0; i < count; i++) {
+                localFunctions.Add(SerializationHelper.readString(stream));
+            }
+        }
+
+        internal void writeIntro(Stream stream) {
+            SerializationHelper.writeInt(stream, globalFunctions.Count);
+            foreach (string global in globalFunctions) {
+                SerializationHelper.writeString(stream, global);
+            }
+
+            SerializationHelper.writeInt(stream, localFunctions.Count);
+            foreach (string local in localFunctions) {
+                SerializationHelper.writeString(stream, local);
+            }
+        }
     }
 }

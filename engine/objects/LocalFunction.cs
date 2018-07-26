@@ -47,7 +47,16 @@ namespace Mishin870.MHScript.engine.objects {
         }
 
         internal void serialize(Stream stream, SerializationInfo info) {
-            SerializationHelper.writeString(stream, name);
+            if (info.optimizeForClient) {
+                int x = info.localFunctions.IndexOf(this.name);
+                if (x == -1) {
+                    throw new InvalidOperationException("Can't find that local function name in SerializationInfo!");
+                }
+                SerializationHelper.writeInt(stream, x);
+            } else {
+                SerializationHelper.writeString(stream, name);
+            }
+
             code.serialize(stream, info);
 
             SerializationHelper.writeInt(stream, args.Count);

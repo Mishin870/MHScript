@@ -361,6 +361,10 @@ namespace Mishin870.MHScript.engine.commands {
         }
 
         internal override void serialize(Stream stream, SerializationInfo info) {
+            if (isRoot && info.optimizeForClient) {
+                info.writeIntro(stream);
+            }
+
             base.serialize(stream, info);
             SerializationHelper.serializeBlock(stream, info, commands);
             stream.WriteByte((byte) (isRoot ? 1 : 0));
@@ -993,7 +997,19 @@ namespace Mishin870.MHScript.engine.commands {
 
         internal override void serialize(Stream stream, SerializationInfo info) {
             base.serialize(stream, info);
-            SerializationHelper.writeString(stream, functionName);
+
+            if (info.optimizeForClient) {
+                int x = info.localFunctions.IndexOf(functionName);
+                if (x == -1) {
+                    x = info.globalFunctions.IndexOf(functionName);
+                    if (x == -1) {
+                        throw new InvalidOperationException("Call to undefined function name. Function must be exist in optimizeForClient mode!");
+                    }
+                }
+                SerializationHelper.writeInt(stream, x);
+            } else {
+                SerializationHelper.writeString(stream, functionName);
+            }
             SerializationHelper.serializeBlock(stream, info, args);
         }
 
