@@ -11,24 +11,27 @@ alert("Hello, world!");
 ```
 
 #### How to start
-[Read this wiki page](https://github.com/Mishin870/MHScript/wiki/How-to-start)
+[Read this wiki page.](https://github.com/Mishin870/MHScript/wiki/How-to-start)
 
 #### Serialization
 You can serialize compiled script to increase loading speed (run it without syntax processing)
-See the [wiki page for it](https://github.com/Mishin870/MHScript/wiki/Serialization)
+See the [wiki page for it.](https://github.com/Mishin870/MHScript/wiki/Serialization)
 
 #### Documentation
 All functions (include your own) in MHS contains their descriptions and full signatures.
-In future this will be used in documentation generator and in autocompleting in code editor.
+Engine can generate documentation for export or autocompleting in some code editor.
+[how to use it.](https://github.com/Mishin870/MHScript/wiki/Documentation)
 
 #### Tasks
 - [x] Parse lexems in script
 - [x] Combine them to complex objects (compile)
-- [x] Make local script functions
-- [x] Make local function variables and callstack
+- [x] Local script functions
+- [x] Local function variables and callstack
 - [x] Serialize script objects for future c++ client-side interpreter
 - [x] Restructurize engine
-- [ ] Documentation generator
+- [x] Documentation generator
+- [ ] Improve serialization (for example, replace string in function calls by numeric id of functions)
+- [ ] Documentation for objects and object.functions()
 - [ ] Code editor
 - [ ] C++ client-side interpreter
 - [ ] Implement objects properties
