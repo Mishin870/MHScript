@@ -57,6 +57,10 @@
   <ItemGroup>
     <Compile Include="engine\commands\SerializationHelper.cs" />
     <Compile Include="engine\commands\CommandsParser.cs" />
+    <Compile Include="engine\documentation\DocumentationTypes.cs" />
+    <Compile Include="engine\documentation\FunctionEntry.cs" />
+    <Compile Include="engine\documentation\IDocumentationEntry.cs" />
+    <Compile Include="engine\documentation\IDocumentationProvider.cs" />
     <Compile Include="engine\Engine.cs" />
     <Compile Include="engine\FunctionType.cs" />
     <Compile Include="engine\ExceptionHelper.cs" />

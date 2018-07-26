@@ -6,6 +6,7 @@ using System.Globalization;
 using Mishin870.MHScript.engine;
 using Mishin870.MHScript.engine.objects;
 using Mishin870.MHScript.engine.commands;
+using Mishin870.MHScript.engine.documentation;
 
 namespace Mishin870.MHScript.engine {
 
@@ -776,6 +777,21 @@ namespace Mishin870.MHScript.engine {
         /// </summary>
         public object getDotProperty(object obj, string propertyName) {
             throw new NotImplementedException("Параметры объектов ещё не поддерживаются!");
+        }
+
+        /// <summary>
+        /// Получить документацию обо всех объектах в языке.
+        /// На данный момент возвращает только локальные и глобальные функции.
+        /// </summary>
+        public List<IDocumentationEntry> getDocumentation() {
+            List<IDocumentationEntry> result = new List<IDocumentationEntry>();
+            foreach (GlobalFunction global in globalFunctions.Values) {
+                result.Add(global.getDocumentation());
+            }
+            foreach (LocalFunction local in localFunctions.Values) {
+                result.Add(local.getDocumentation());
+            }
+            return result;
         }
     }
 

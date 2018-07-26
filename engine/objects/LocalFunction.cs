@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using Mishin870.MHScript.engine.commands;
 using System.IO;
+using Mishin870.MHScript.engine.documentation;
 
 namespace Mishin870.MHScript.engine.objects {
     /// <summary>
     /// Локальная функция, объявленная в скрипте
     /// </summary>
-    public class LocalFunction {
+    public class LocalFunction : IDocumentationProvider {
         /// <summary>
         /// Название функции
         /// </summary>
@@ -35,6 +36,14 @@ namespace Mishin870.MHScript.engine.objects {
             for (int i = 0; i < count; i++) {
                 args.Add(SerializationHelper.readString(stream));
             }
+        }
+
+        public IDocumentationEntry getDocumentation() {
+            return new FunctionEntry(
+                "object " + name + "(" + string.Join(", ", args.ToArray()) + ")",
+                "Local function (no description)",
+                true
+            );
         }
 
         public void serialize(Stream stream) {
