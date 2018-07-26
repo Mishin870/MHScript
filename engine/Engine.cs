@@ -793,6 +793,14 @@ namespace Mishin870.MHScript.engine {
             }
             return result;
         }
+
+        internal SerializationInfo getSerializationInfo() {
+            SerializationInfo info = new SerializationInfo();
+            foreach (string global in globalFunctions.Keys) {
+                info.globalFunctions.Add(global);
+            }
+            return info;
+        }
     }
 
 }

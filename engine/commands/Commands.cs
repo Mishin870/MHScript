@@ -432,8 +432,13 @@ namespace Mishin870.MHScript.engine.commands {
             return null;
         }
 
-        public void serialize(Stream stream) {
-            this.serialize(stream, new SerializationInfo());
+        public void serialize(Engine engine, Stream stream, bool optimizeForClient) {
+            SerializationInfo info = engine.getSerializationInfo();
+            info.optimizeForClient = optimizeForClient;
+            foreach (LocalFunction local in localFunctions) {
+                info.localFunctions.Add(local.name);
+            }
+            this.serialize(stream, info);
         }
     }
     #endregion

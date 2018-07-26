@@ -93,7 +93,24 @@ namespace Mishin870.MHScript.engine.commands {
         }
     }
 
+    /// <summary>
+    /// Вспомогательный класс, хранящий всю необходимую информацию, передаваемую
+    /// композицией от верхов к низам. Например, маппинг имён функций.
+    /// </summary>
     internal class SerializationInfo {
+        /// <summary>
+        /// Имена глобальных функций. Вызовы всех функций будут заменены на число-индекс в этом массиве.
+        /// </summary>
+        internal List<string> globalFunctions = new List<string>();
 
+        /// <summary>
+        /// Имена локальных функций. Вызовы и сами функции в объявлении будут заменены на число-индекс в этом массиве.
+        /// </summary>
+        internal List<string> localFunctions = new List<string>();
+
+        /// <summary>
+        /// Все вышеперечисленные правила будут работать только при установке этого флага в true
+        /// </summary>
+        internal bool optimizeForClient;
     }
 }
