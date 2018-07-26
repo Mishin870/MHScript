@@ -46,9 +46,9 @@ namespace Mishin870.MHScript.engine.objects {
             );
         }
 
-        public void serialize(Stream stream) {
+        internal void serialize(Stream stream, SerializationInfo info) {
             SerializationHelper.writeString(stream, name);
-            code.serialize(stream);
+            code.serialize(stream, info);
 
             SerializationHelper.writeInt(stream, args.Count);
             foreach (string arg in args) {

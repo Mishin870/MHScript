@@ -5,7 +5,7 @@ using System.Text;
 using System.IO;
 
 namespace Mishin870.MHScript.engine.commands {
-    static class SerializationHelper {
+    internal static class SerializationHelper {
         internal static Dictionary<byte, Type> types = new Dictionary<byte, Type>();
         internal static Dictionary<Type, byte> ids = new Dictionary<Type, byte>();
         static SerializationHelper() {
@@ -47,10 +47,10 @@ namespace Mishin870.MHScript.engine.commands {
             return (ICommand) Activator.CreateInstance(type, stream);
         }
 
-        internal static void serializeBlock(Stream stream, List<ICommand> block) {
+        internal static void serializeBlock(Stream stream, SerializationInfo info, List<ICommand> block) {
             writeInt(stream, block.Count);
             foreach (ICommand command in block) {
-                command.serialize(stream);
+                command.serialize(stream, info);
             }
         }
 
@@ -91,5 +91,9 @@ namespace Mishin870.MHScript.engine.commands {
             stream.Read(bytes, 0, count);
             return Encoding.UTF8.GetString(bytes);
         }
+    }
+
+    internal class SerializationInfo {
+
     }
 }

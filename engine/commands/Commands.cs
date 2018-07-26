@@ -17,7 +17,7 @@ namespace Mishin870.MHScript.engine.commands {
     /// </summary>
     public abstract class ICommand {
         public abstract object execute(Engine engine);
-        public virtual void serialize(Stream stream) {
+        internal virtual void serialize(Stream stream, SerializationInfo info) {
             stream.WriteByte(SerializationHelper.ids[GetType()]);
         }
     }
@@ -32,10 +32,10 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.deserializeBlock(stream, blocks);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             stream.WriteByte((byte) operation);
-            SerializationHelper.serializeBlock(stream, blocks);
+            SerializationHelper.serializeBlock(stream, info, blocks);
         }
 
         public CommandLogicCompound(LexemKind operation) {
@@ -73,11 +73,11 @@ namespace Mishin870.MHScript.engine.commands {
             right = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             stream.WriteByte((byte) operation);
-            left.serialize(stream);
-            right.serialize(stream);
+            left.serialize(stream, info);
+            right.serialize(stream, info);
         }
 
         public CommandLogic(LexemKind operation, ICommand left, ICommand right) {
@@ -165,9 +165,9 @@ namespace Mishin870.MHScript.engine.commands {
             command = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            command.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            command.serialize(stream, info);
         }
 
         public CommandReturn(ICommand command) {
@@ -189,9 +189,9 @@ namespace Mishin870.MHScript.engine.commands {
             command = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            command.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            command.serialize(stream, info);
         }
 
         public CommandElse(ICommand command) {
@@ -213,10 +213,10 @@ namespace Mishin870.MHScript.engine.commands {
             command = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            condition.serialize(stream);
-            command.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            condition.serialize(stream, info);
+            command.serialize(stream, info);
         }
 
         public CommandElseIf(ICommand condition, ICommand command) {
@@ -246,11 +246,11 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.deserializeBlock(stream, elseStatements);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            condition.serialize(stream);
-            command.serialize(stream);
-            SerializationHelper.serializeBlock(stream, elseStatements);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            condition.serialize(stream, info);
+            command.serialize(stream, info);
+            SerializationHelper.serializeBlock(stream, info, elseStatements);
         }
 
         public CommandIf(ICommand condition, ICommand command, List<ICommand> elseStatements) {
@@ -289,12 +289,12 @@ namespace Mishin870.MHScript.engine.commands {
             command = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            condition.serialize(stream);
-            pre.serialize(stream);
-            iter.serialize(stream);
-            command.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            condition.serialize(stream, info);
+            pre.serialize(stream, info);
+            iter.serialize(stream, info);
+            command.serialize(stream, info);
         }
 
         public CommandFor(ICommand pre, ICommand condition, ICommand iter, ICommand command) {
@@ -321,10 +321,10 @@ namespace Mishin870.MHScript.engine.commands {
             command = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            condition.serialize(stream);
-            command.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            condition.serialize(stream, info);
+            command.serialize(stream, info);
         }
 
         public CommandWhile(ICommand condition, ICommand command) {
@@ -360,15 +360,15 @@ namespace Mishin870.MHScript.engine.commands {
             }
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            SerializationHelper.serializeBlock(stream, commands);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            SerializationHelper.serializeBlock(stream, info, commands);
             stream.WriteByte((byte) (isRoot ? 1 : 0));
 
             if (isRoot) {
                 SerializationHelper.writeInt(stream, localFunctions.Count);
                 foreach (LocalFunction function in localFunctions) {
-                    function.serialize(stream);
+                    function.serialize(stream, info);
                 }
             }
         }
@@ -431,6 +431,10 @@ namespace Mishin870.MHScript.engine.commands {
             }
             return null;
         }
+
+        public void serialize(Stream stream) {
+            this.serialize(stream, new SerializationInfo());
+        }
     }
     #endregion
 
@@ -445,10 +449,10 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.deserializeBlock(stream, index);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            command.serialize(stream);
-            SerializationHelper.serializeBlock(stream, index);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            command.serialize(stream, info);
+            SerializationHelper.serializeBlock(stream, info, index);
         }
 
         public CommandIndex(ICommand command, List<ICommand> index) {
@@ -527,8 +531,8 @@ namespace Mishin870.MHScript.engine.commands {
         public CommandEmpty(Stream stream) {
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
         }
 
         public override object execute(Engine engine) {
@@ -544,10 +548,10 @@ namespace Mishin870.MHScript.engine.commands {
             right = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            left.serialize(stream);
-            right.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            left.serialize(stream, info);
+            right.serialize(stream, info);
         }
 
         public CommandAssign(ICommand left, ICommand right) {
@@ -574,11 +578,11 @@ namespace Mishin870.MHScript.engine.commands {
             index = SerializationHelper.deSerialize(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            left.serialize(stream);
-            right.serialize(stream);
-            index.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            left.serialize(stream, info);
+            right.serialize(stream, info);
+            index.serialize(stream, info);
         }
 
         public CommandAssignIndex(ICommand left, ICommand index, ICommand right) {
@@ -622,9 +626,9 @@ namespace Mishin870.MHScript.engine.commands {
             operation = (LexemKind) stream.ReadByte();
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            command.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            command.serialize(stream, info);
             stream.WriteByte((byte) operation);
         }
 
@@ -702,10 +706,10 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.deserializeBlock(stream, blocks);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             stream.WriteByte((byte) operation);
-            SerializationHelper.serializeBlock(stream, blocks);
+            SerializationHelper.serializeBlock(stream, info, blocks);
         }
 
         public CommandMath(LexemKind operation) {
@@ -827,8 +831,8 @@ namespace Mishin870.MHScript.engine.commands {
             value = SerializationHelper.readInt(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             SerializationHelper.writeInt(stream, value);
         }
 
@@ -848,8 +852,8 @@ namespace Mishin870.MHScript.engine.commands {
             value = SerializationHelper.readString(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             SerializationHelper.writeString(stream, value);
         }
 
@@ -878,9 +882,9 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.deserializeBlock(stream, commands);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            SerializationHelper.serializeBlock(stream, commands);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            SerializationHelper.serializeBlock(stream, info, commands);
         }
 
         public CommandStringVariabled(string value) {
@@ -912,8 +916,8 @@ namespace Mishin870.MHScript.engine.commands {
             value = stream.ReadByte() == 1;
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             stream.WriteByte((byte) (value ? 1 : 0));
         }
 
@@ -933,8 +937,8 @@ namespace Mishin870.MHScript.engine.commands {
             variableName = SerializationHelper.readString(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             SerializationHelper.writeString(stream, variableName);
         }
 
@@ -956,9 +960,9 @@ namespace Mishin870.MHScript.engine.commands {
             variableName = SerializationHelper.readString(stream);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            obj.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            obj.serialize(stream, info);
             SerializationHelper.writeString(stream, variableName);
         }
 
@@ -982,10 +986,10 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.deserializeBlock(stream, args);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
             SerializationHelper.writeString(stream, functionName);
-            SerializationHelper.serializeBlock(stream, args);
+            SerializationHelper.serializeBlock(stream, info, args);
         }
 
         public CommandGlobalFunction(string functionName, List<ICommand> args) {
@@ -1014,11 +1018,11 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.deserializeBlock(stream, args);
         }
 
-        public override void serialize(Stream stream) {
-            base.serialize(stream);
-            obj.serialize(stream);
+        internal override void serialize(Stream stream, SerializationInfo info) {
+            base.serialize(stream, info);
+            obj.serialize(stream, info);
             SerializationHelper.writeString(stream, functionName);
-            SerializationHelper.serializeBlock(stream, args);
+            SerializationHelper.serializeBlock(stream, info, args);
         }
 
         public CommandDotFunction(ICommand obj, string functionName, List<ICommand> args) {
