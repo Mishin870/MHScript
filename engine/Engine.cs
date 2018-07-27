@@ -290,6 +290,7 @@ namespace Mishin870.MHScript.engine {
         /// Добавить набор локальных функций (которые загружаются из скрипта)
         /// </summary>
         public void addLocalFunctions(List<LocalFunction> localFunctions) {
+            this.localFunctions.Clear();
             foreach (LocalFunction localFunction in localFunctions)
                 this.localFunctions[localFunction.name] = localFunction;
         }
@@ -661,7 +662,12 @@ namespace Mishin870.MHScript.engine {
         /// Загрузить сериализованный скрипт из потока.
         /// </summary>
         public Script loadScript(Stream stream) {
-            return (Script) SerializationHelper.deSerialize(stream);
+            SerializationInfo info = new SerializationInfo();
+            info.optimizeForClient = stream.ReadByte() == 1;
+            if (info.optimizeForClient) {
+                info.readIntro(stream);
+            }
+            return (Script) SerializationHelper.deSerialize(stream, info);
         }
 
         /// <summary>

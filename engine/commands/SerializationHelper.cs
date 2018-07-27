@@ -38,13 +38,13 @@ namespace Mishin870.MHScript.engine.commands {
             }
         }
 
-        internal static ICommand deSerialize(Stream stream) {
+        internal static ICommand deSerialize(Stream stream, SerializationInfo info) {
             int typeId = stream.ReadByte();
             if (typeId == -1) {
                 throw new Exception("Ошибка чтения скрипта: конец файла!");
             }
             Type type = types[(byte) typeId];
-            return (ICommand) Activator.CreateInstance(type, stream);
+            return (ICommand) Activator.CreateInstance(type, stream, info);
         }
 
         internal static void serializeBlock(Stream stream, SerializationInfo info, List<ICommand> block) {
@@ -54,11 +54,11 @@ namespace Mishin870.MHScript.engine.commands {
             }
         }
 
-        internal static void deserializeBlock(Stream stream, List<ICommand> block) {
+        internal static void deserializeBlock(Stream stream, SerializationInfo info, List<ICommand> block) {
             int count = readInt(stream);
             block.Clear();
             for (int i = 0; i < count; i++) {
-                block.Add(deSerialize(stream));
+                block.Add(deSerialize(stream, info));
             }
         }
 
@@ -97,7 +97,7 @@ namespace Mishin870.MHScript.engine.commands {
     /// Вспомогательный класс, хранящий всю необходимую информацию, передаваемую
     /// композицией от верхов к низам. Например, маппинг имён функций.
     /// </summary>
-    internal class SerializationInfo {
+    public class SerializationInfo {
         /// <summary>
         /// Имена глобальных функций. Вызовы всех функций будут заменены на число-индекс в этом массиве.
         /// </summary>

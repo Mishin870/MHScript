@@ -27,9 +27,13 @@ namespace Mishin870.MHScript.engine.objects {
         public LocalFunction() {
         }
 
-        public LocalFunction(Stream stream) {
-            name = SerializationHelper.readString(stream);
-            code = (Script) SerializationHelper.deSerialize(stream);
+        internal LocalFunction(Stream stream, SerializationInfo info) {
+            if (info.optimizeForClient) {
+                name = info.localFunctions[SerializationHelper.readInt(stream)];
+            } else {
+                name = SerializationHelper.readString(stream);
+            }
+            code = (Script) SerializationHelper.deSerialize(stream, info);
 
             int count = SerializationHelper.readInt(stream);
             args = new List<string>();
