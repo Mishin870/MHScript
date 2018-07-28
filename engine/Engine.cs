@@ -803,7 +803,9 @@ namespace Mishin870.MHScript.engine {
         internal SerializationInfo getSerializationInfo() {
             SerializationInfo info = new SerializationInfo();
             foreach (string global in globalFunctions.Keys) {
-                info.globalFunctions.Add(global);
+                if (!info.globalFunctions.Contains(global)) {
+                    info.globalFunctions.Add(global);
+                }
             }
             return info;
         }

@@ -38,7 +38,11 @@ namespace Mishin870.MHScript.engine.objects {
             int count = SerializationHelper.readInt(stream);
             args = new List<string>();
             for (int i = 0; i < count; i++) {
-                args.Add(SerializationHelper.readString(stream));
+                if (info.optimizeForClient) {
+                    args.Add(info.variables[SerializationHelper.readInt(stream)]);
+                } else {
+                    args.Add(SerializationHelper.readString(stream));
+                }
             }
         }
 
@@ -65,7 +69,15 @@ namespace Mishin870.MHScript.engine.objects {
 
             SerializationHelper.writeInt(stream, args.Count);
             foreach (string arg in args) {
-                SerializationHelper.writeString(stream, arg);
+                if (info.optimizeForClient) {
+                    int x = info.variables.IndexOf(arg);
+                    if (x == -1) {
+                        throw new InvalidOperationException("Can't find that local function argument name in SerializationInfo!");
+                    }
+                    SerializationHelper.writeInt(stream, x);
+                } else {
+                    SerializationHelper.writeString(stream, arg);
+                }
             }
         }
     }

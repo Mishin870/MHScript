@@ -109,6 +109,12 @@ namespace Mishin870.MHScript.engine.commands {
         internal List<string> localFunctions = new List<string>();
 
         /// <summary>
+        /// Имена всех переменных (аргументы функций тоже считаются).
+        /// Все обращения к ним будут заменены на число-индекс в этом массиве.
+        /// </summary>
+        internal List<string> variables = new List<string>();
+
+        /// <summary>
         /// Все вышеперечисленные правила будут работать только при установке этого флага в true
         /// </summary>
         internal bool optimizeForClient;
@@ -116,6 +122,7 @@ namespace Mishin870.MHScript.engine.commands {
         internal void readIntro(Stream stream) {
             globalFunctions.Clear();
             localFunctions.Clear();
+            variables.Clear();
 
             int count = SerializationHelper.readInt(stream);
             for (int i = 0; i < count; i++) {
@@ -124,6 +131,10 @@ namespace Mishin870.MHScript.engine.commands {
             count = SerializationHelper.readInt(stream);
             for (int i = 0; i < count; i++) {
                 localFunctions.Add(SerializationHelper.readString(stream));
+            }
+            count = SerializationHelper.readInt(stream);
+            for (int i = 0; i < count; i++) {
+                variables.Add(SerializationHelper.readString(stream));
             }
         }
 
@@ -136,6 +147,11 @@ namespace Mishin870.MHScript.engine.commands {
             SerializationHelper.writeInt(stream, localFunctions.Count);
             foreach (string local in localFunctions) {
                 SerializationHelper.writeString(stream, local);
+            }
+
+            SerializationHelper.writeInt(stream, variables.Count);
+            foreach (string variable in variables) {
+                SerializationHelper.writeString(stream, variable);
             }
         }
     }
