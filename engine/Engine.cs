@@ -557,7 +557,7 @@ namespace Mishin870.MHScript.engine {
                 } else if (args[0] is bool) {
                     return ((bool) args[0]) ? 1 : 0;
                 } else if (args[0] is CustomVariable) {
-                    return ((CustomVariable) args[0]).floatVal();
+                    return ((CustomVariable) args[0]).intVal();
                 }
             }
             if (args.Length >= 2 && args[1] != null) {

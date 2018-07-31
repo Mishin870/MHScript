@@ -99,8 +99,8 @@ namespace Mishin870.MHScript.engine.commands {
         }
 
         private object equals(object obj1, object obj2) {
-            if (obj1 is float && obj2 is float) {
-                return ((float) obj1) == ((float) obj2);
+            if (obj1 is int && obj2 is int) {
+                return ((int) obj1) == ((int) obj2);
             } else if (obj1 is string && obj2 is string) {
                 return ((string) obj1).Equals(((string) obj2));
             } else {
@@ -108,8 +108,8 @@ namespace Mishin870.MHScript.engine.commands {
             }
         }
         private object nequals(object obj1, object obj2) {
-            if (obj1 is float && obj2 is float) {
-                return ((float) obj1) != ((float) obj2);
+            if (obj1 is int && obj2 is int) {
+                return ((int) obj1) != ((int) obj2);
             } else if (obj1 is string && obj2 is string) {
                 return !((string) obj1).Equals(((string) obj2));
             } else {
@@ -150,19 +150,26 @@ namespace Mishin870.MHScript.engine.commands {
                         return false;
                 }
             } else {
+                int x1 = 0, x2 = 0;
+                if (op1 is int) {
+                    x1 = (int) op1;
+                }
+                if (op2 is int) {
+                    x2 = (int) op2;
+                }
                 switch (operation) {
                     case LexemKind.EQUALS:
                         return equals(op1, op2);
                     case LexemKind.NOTEQUALS:
                         return nequals(op1, op2);
                     case LexemKind.LESSER:
-                        return ((float) op1) < ((float) op2);
+                        return x1 < x2;
                     case LexemKind.GREATER:
-                        return ((float) op1) > ((float) op2);
+                        return x1 > x2;
                     case LexemKind.LESSER_EQUALS:
-                        return ((float) op1) <= ((float) op2);
+                        return x1 <= x2;
                     case LexemKind.GREATER_EQUALS:
-                        return ((float) op1) >= ((float) op2);
+                        return x1 >= x2;
                     default:
                         return false;
                 }
@@ -553,7 +560,7 @@ namespace Mishin870.MHScript.engine.commands {
             }
             if (obj != null) {
                 if (obj is List<object>) {
-                    int x = (int) ((float) engine.getRealValue(index[0].execute(engine)));
+                    int x = (int) ((int) engine.getRealValue(index[0].execute(engine)));
                     int count = ((List<object>) obj).Count;
                     if (x >= 0 && x < count) {
                         return ((List<object>) obj)[x];
@@ -566,7 +573,7 @@ namespace Mishin870.MHScript.engine.commands {
                         }
                     }
                 } else if (obj is string) {
-                    int x = (int) ((float) engine.getRealValue(index[0].execute(engine)));
+                    int x = (int) ((int) engine.getRealValue(index[0].execute(engine)));
                     int count = ((string) obj).Length;
                     if (x >= 0 && x < count) {
                         return ((string) obj).Substring(x, 1);
@@ -695,11 +702,11 @@ namespace Mishin870.MHScript.engine.commands {
                 object obj = engine.getRealValue(variable.value);
                 if (obj is string) {
                     StringBuilder stringBuilder = new StringBuilder((string) obj);
-                    int x = (int) ((float) engine.getRealValue(index.execute(engine)));
+                    int x = (int) ((int) engine.getRealValue(index.execute(engine)));
                     stringBuilder[x] = ((string) engine.getRealValue(right.execute(engine)))[0];
                     variable.value = stringBuilder.ToString();
                 } else if (obj is List<object>) {
-                    int x = (int) ((float) engine.getRealValue(index.execute(engine)));
+                    int x = (int) ((int) engine.getRealValue(index.execute(engine)));
                     ((List<object>) obj)[x] = engine.getRealValue(right.execute(engine));
                 } else if (obj is Dictionary<string, object>) {
                     string x = (string) engine.getRealValue(index.execute(engine));
@@ -743,8 +750,8 @@ namespace Mishin870.MHScript.engine.commands {
             if (command is CommandVariable) {
                 Variable variable = (Variable) command.execute(engine);
                 object value = engine.getRealValue(variable.value);
-                if (value is float) {
-                    float x = (float) value;
+                if (value is int) {
+                    int x = (int) value;
                     switch (operation) {
                         case LexemKind.INCREMENT:
                             variable.value = x + 1;
@@ -830,12 +837,12 @@ namespace Mishin870.MHScript.engine.commands {
 
         private object plus(object[] objects) {
             bool isStr = false;
-            bool isFloat = false;
+            bool isint = false;
             foreach (object obj in objects) {
                 if (!isStr && obj is string) {
                     isStr = true;
-                } else if (!isFloat && obj is float) {
-                    isFloat = true;
+                } else if (!isint && obj is int) {
+                    isint = true;
                 }
             }
             if (isStr) {
@@ -848,13 +855,13 @@ namespace Mishin870.MHScript.engine.commands {
                     }
                 }
                 return stringBuilder.ToString();
-            } else if (isFloat) {
-                float result = 0;
+            } else if (isint) {
+                int result = 0;
                 foreach (object obj in objects) {
                     if (obj is CustomVariable) {
-                        result += ((CustomVariable) obj).floatVal();
+                        result += ((CustomVariable) obj).intVal();
                     } else {
-                        result += (float) obj;
+                        result += (int) obj;
                     }
                 }
                 return result;
@@ -865,42 +872,42 @@ namespace Mishin870.MHScript.engine.commands {
                         result = ((CustomVariable) obj).math(result, LexemKind.PLUS);
                     } else if (obj is string) {
                         result = result.ToString() + (string) obj;
-                    } else if (obj is float) {
-                        result = ((float) result) + (float) obj;
+                    } else if (obj is int) {
+                        result = ((int) result) + (int) obj;
                     }
                 }
                 return result;
             }
         }
         private object minus(object[] objects) {
-            float result = (float) objects[0];
+            int result = (int) objects[0];
             foreach (object obj in objects) {
                 if (obj is CustomVariable) {
-                    result -= ((CustomVariable) obj).floatVal();
+                    result -= ((CustomVariable) obj).intVal();
                 } else {
-                    result -= (float) obj;
+                    result -= (int) obj;
                 }
             }
             return result;
         }
         private object multiply(object[] objects) {
-            float result = (float) objects[0];
+            int result = (int) objects[0];
             foreach (object obj in objects) {
                 if (obj is CustomVariable) {
-                    result *= ((CustomVariable) obj).floatVal();
+                    result *= ((CustomVariable) obj).intVal();
                 } else {
-                    result *= (float) obj;
+                    result *= (int) obj;
                 }
             }
             return result;
         }
         private object divide(object[] objects) {
-            float result = (float) objects[0];
+            int result = (int) objects[0];
             foreach (object obj in objects) {
                 if (obj is CustomVariable) {
-                    result /= ((CustomVariable) obj).floatVal();
+                    result /= ((CustomVariable) obj).intVal();
                 } else {
-                    result /= (float) obj;
+                    result /= (int) obj;
                 }
             }
             return result;

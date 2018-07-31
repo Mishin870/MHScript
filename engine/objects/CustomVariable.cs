@@ -47,7 +47,7 @@ namespace Mishin870.MHScript.engine.objects {
         /// <summary>
         /// Вызывается при необходимости сложить этот объект с числом. Либо при вызове функции float
         /// </summary>
-        float floatVal();
+        int intVal();
         /// <summary>
         /// Вызывается при необходимости сложить этот объект со строкой. Либо при вызове функции str
         /// </summary>
